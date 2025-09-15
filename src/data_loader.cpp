@@ -309,12 +309,6 @@ VectorXd CFmDataLoader::magnitude( const MatrixXd& matrix )
     return ( matrix.array().square().rowwise().sum() ).sqrt();
 }
 
-// 三参数版本的重载 (处理单个向量)
-double CFmDataLoader::magnitude( double x, double y, double z )
-{
-    return sqrt( x * x + y * y + z * z );
-}
-
 void CFmDataLoader::generate_data()
 {
     // 提取各轴分量 (加速度)

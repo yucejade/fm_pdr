@@ -17,9 +17,6 @@ public:
     void          set_location_output( const std::vector< PDRPosition >& positions, const int from );
     void          set_location_output( VectorXd x, VectorXd y, VectorXd direction );
     void          eval_model() const;
-    double        get_dir_error() const;
-    double        get_dir_ratio( double diff = 15.0 ) const;
-    double        get_dist_error() const;
 private:
     Document load_csv( const string& filename );
     void     load_data_from_csv();
@@ -30,8 +27,11 @@ private:
     void     preprocess_data( bool is_save = false );
 
     VectorXd magnitude( const MatrixXd& matrix );
-    double   magnitude( double x, double y, double z );
     void     generate_data();
+
+    double        get_dir_error() const;
+    double        get_dir_ratio( double diff = 15.0 ) const;
+    double        get_dist_error() const;
 public:
     vector< double > m_time_location;  // public
     size_t           m_len_input = 0;  // public

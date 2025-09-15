@@ -1,0 +1,74 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [   
+        {
+            "name": "训练模型文件",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "args": [
+                "-t",
+                "../test_case0"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "PDR测试",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "args": [
+                "-d",
+                "../test_case0"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "训练并做PDR测试",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "args": [
+                "-t",
+                "../test_case0",
+                "-d",
+                "../test_case0"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "使用原始逻辑测试",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "args": [
+                "-o",
+                "../test_case0"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        }
+    ]
+}

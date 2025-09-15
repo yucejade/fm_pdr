@@ -1,0 +1,27 @@
+{
+    "version": "2.0.0",
+    "tasks": [
+        {
+            "label": "编译C文件",
+            "type": "shell",                //任务类型
+            "command": "cmake .. -DCMAKE_BUILD_TYPE=debug",  //编译指令,相当于你在命令行执行的指令
+            "args": [],                     //可以直接在command把参数弄好,这个不很有必要
+            "group": "build",               //这个主要是告诉vscode这个任务的类型
+            "options": {
+                "cwd": "${workspaceFolder}/build" //表示command的指令的运行目录,${workspaceFolder}是vscode的变量,表示工作区目录
+            },
+            "detail": "Run make to build the project"  //类似于描述吧,可以不填
+        },
+        {
+            "label": "编译C++文件",
+            "type": "shell",                //任务类型
+            "command": "cmake .. -DCMAKE_BUILD_TYPE=debug",  //编译指令,相当于你在命令行执行的指令
+            "args": [],                     //可以直接在command把参数弄好,这个不很有必要
+            "group": "build",               //这个主要是告诉vscode这个任务的类型
+            "options": {
+                "cwd": "${workspaceFolder}/build/" //表示command的指令的运行目录,${workspaceFolder}是vscode的变量,表示工作区目录
+            },
+            "detail": "Run make to build the project"  //类似于描述吧,可以不填
+        }
+    ]
+}
