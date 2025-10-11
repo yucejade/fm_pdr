@@ -8,7 +8,7 @@
             "name": "训练模型文件",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
             "args": [
                 "-t",
                 "../test_case0"
@@ -24,10 +24,11 @@
             "name": "PDR测试",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
             "args": [
                 "-d",
-                "../test_case0"
+                "../test_case0",
+                "-e"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build",
@@ -40,7 +41,7 @@
             "name": "训练并做PDR测试",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
             "args": [
                 "-t",
                 "../test_case0",
@@ -58,7 +59,7 @@
             "name": "使用原始逻辑测试",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
             "args": [
                 "-o",
                 "../test_case0"

@@ -1,3 +1,4 @@
+#include <Eigen/Dense>
 #include <vector>
 #include <cmath>
 #include <iostream>
@@ -6,21 +7,18 @@
 #include <dlib/matrix.h>
 #include <dlib/serialize.h>
 #include "step_predictor.h"
+#include "fm_pdr.h"
 
-CFmStepPredictor::CFmStepPredictor(const CFmDataLoader &train_data, int clean_start, int clean_end)
+CFmStepPredictor::CFmStepPredictor(const PDRConfig &config, const CFmDataManager &train_data) : m_config(config)
 {
-    if (clean_start <= 0)
-        clean_start = 0;
-    if (clean_end <= 0)
-        clean_end = (int)train_data.m_len_input;
-
-    if (clean_start >= clean_end || clean_end > (int)train_data.m_len_input)
-        throw std::invalid_argument("Invalid clean range: [" + std::to_string(clean_start) + ", " + std::to_string(clean_end) + ")");
-
-    m_train_data = slice(train_data, clean_start, clean_end);
+    if (train_data.get_data_type() == DATA_TYPE_FILE)
+    {
+        const CFmDataFileLoader& file_loader = dynamic_cast<const CFmDataFileLoader &>(train_data);
+        m_train_data = slice(file_loader, config.clean_start <= 0 ? 0 : config.clean_start * config.sample_rate, config.clean_end <= 0 ? (int)train_data.get_train_data_size() * config.sample_rate : config.clean_end * config.sample_rate);
+    }
 }
 
-CFmStepPredictor::CFmStepPredictor()
+CFmStepPredictor::CFmStepPredictor(const PDRConfig &config) : m_config(config)
 {
 }
 
@@ -156,15 +154,16 @@ double CFmStepPredictor::compute_variance(const Eigen::VectorXd &data, int start
     return variance;
 }
 
-FeatureMatrix CFmStepPredictor::calculate_features(const CFmDataLoader &data,
+FeatureMatrix CFmStepPredictor::calculate_features(const CFmDataManager &data,
                                                    const Eigen::VectorXi &real_peak_indices,
                                                    const Eigen::VectorXd &filtered_accel_data,
                                                    int start_step_index,
                                                    int end_step_index)
 {
     // 计算频率f
-    double time_interval = data.m_time[real_peak_indices[end_step_index]] -
-                           data.m_time[real_peak_indices[start_step_index]];
+    const VectorXd& data_time = data.get_pdr_data(PDR_DATA_FIELD_TIME);
+    double time_interval = data_time[real_peak_indices[end_step_index]] -
+                           data_time[real_peak_indices[start_step_index]];
     double f = (end_step_index - start_step_index) / time_interval;
 
     // 计算方差sigma
@@ -184,8 +183,9 @@ FeatureMatrix CFmStepPredictor::calculate_features(const Eigen::VectorXi &real_p
                                                    int end_step_index)
 {
     // 计算频率f
-    double time_interval = m_train_data.m_time[real_peak_indices[end_step_index]] -
-                           m_train_data.m_time[real_peak_indices[start_step_index]];
+    const VectorXd& train_data_time = m_train_data.get_pdr_data(PDR_DATA_FIELD_TIME);
+    double time_interval = train_data_time[real_peak_indices[end_step_index]] -
+                           train_data_time[real_peak_indices[start_step_index]];
     double f = (end_step_index - start_step_index) / time_interval;
 
     // 计算方差sigma
@@ -326,12 +326,15 @@ LinearModel CFmStepPredictor::step_process_regression(const std::string &model_s
                                                       bool write_log)
 {
     Eigen::VectorXd filtered_accel_data;
-    Eigen::VectorXi real_peak_indices = find_real_peak_indices(m_train_data.m_a_mag, move_average,
+    const VectorXd& accelerometer_data_mag = m_train_data.get_pdr_data(PDR_DATA_FIELD_ACC_MAG);
+    Eigen::VectorXi real_peak_indices = find_real_peak_indices(accelerometer_data_mag, move_average,
                                                                min_distance, filtered_accel_data, valid_peak_value, true);
 
     // 特征提取
+    const VectorXd& train_data_time = m_train_data.get_pdr_data(PDR_DATA_FIELD_TIME);
+    const VectorXd& train_true_data_time = m_train_data.get_true_data(TRUE_DATA_FIELD_TIME);
     Eigen::Index step_index = 0;
-    Eigen::Index n_segments = m_train_data.m_x.size() / distance_frac_step; // 按每个坐标点分段计算一次步长sigma、f
+    Eigen::Index n_segments = m_train_data.get_train_data_size() / distance_frac_step; // 按每个坐标点分段计算一次步长sigma、f
     std::vector<FeatureMatrix> x;
     std::vector<double> y;
 
@@ -340,19 +343,21 @@ LinearModel CFmStepPredictor::step_process_regression(const std::string &model_s
         Eigen::Index last_step_index = step_index;
 
         // 寻找当前段内的步数
-        while (m_train_data.m_time[real_peak_indices[step_index]] <= m_train_data.m_time_location[i * distance_frac_step])
+        while (train_data_time[real_peak_indices[step_index]] <= train_true_data_time[i * distance_frac_step])
             step_index++;
         if (step_index == last_step_index)
             continue; // 没有检测到步伐，跳过
 
         // 计算行走距离
+        const VectorXd& true_data_x = m_train_data.get_true_data(TRUE_DATA_FIELD_X);
+        const VectorXd& true_data_y = m_train_data.get_true_data(TRUE_DATA_FIELD_Y);
         double distance = 0.0;
         Eigen::Index start_idx = (i - 1) * distance_frac_step;
         Eigen::Index end_idx = i * distance_frac_step;
         for (Eigen::Index k = start_idx; k < end_idx; ++k)
         {
-            double dx = m_train_data.m_x[k + 1] - m_train_data.m_x[k];
-            double dy = m_train_data.m_y[k + 1] - m_train_data.m_y[k];
+            double dx = true_data_x[k + 1] - true_data_x[k];
+            double dy = true_data_y[k + 1] - true_data_y[k];
             distance += std::sqrt(dx * dx + dy * dy);
         }
 
@@ -396,18 +401,21 @@ double CFmStepPredictor::step_process_mean(int move_average,
                                            double &valid_peak_value)
 {
     Eigen::VectorXd filtered_accel_data;
-    Eigen::VectorXi real_peak_indices = find_real_peak_indices(m_train_data.m_a_mag, move_average,
+    const VectorXd& accelerometer_data_mag = m_train_data.get_pdr_data(PDR_DATA_FIELD_ACC_MAG);
+    Eigen::VectorXi real_peak_indices = find_real_peak_indices(accelerometer_data_mag, move_average,
                                                                min_distance, filtered_accel_data, valid_peak_value, true);
 
     // 计算总移动距离
-    int n = m_train_data.m_x.size();
-    Eigen::VectorXd dx = m_train_data.m_x.tail(n - 1) - m_train_data.m_x.head(n - 1);
-    Eigen::VectorXd dy = m_train_data.m_y.tail(n - 1) - m_train_data.m_y.head(n - 1);
+    const VectorXd& train_data_time = m_train_data.get_pdr_data(PDR_DATA_FIELD_TIME);
+    const VectorXd& train_true_data_time = m_train_data.get_true_data(TRUE_DATA_FIELD_TIME);
+    int n = m_train_data.get_train_data_size();
+    Eigen::VectorXd dx = m_train_data.get_true_data(TRUE_DATA_FIELD_X).tail(n - 1) - m_train_data.get_true_data(TRUE_DATA_FIELD_X).head(n - 1);
+    Eigen::VectorXd dy = m_train_data.get_true_data(TRUE_DATA_FIELD_Y).tail(n - 1) - m_train_data.get_true_data(TRUE_DATA_FIELD_Y).head(n - 1);
     double total_distance = (dx.array().square() + dy.array().square()).sqrt().sum();
 
     // 统计有效步数
-    Eigen::VectorXd peak_times = m_train_data.m_time(real_peak_indices);
-    int step_count = (peak_times.array() < m_train_data.m_time_location[n - 1]).count();
+    Eigen::VectorXd peak_times = train_data_time(real_peak_indices);
+    int step_count = (peak_times.array() < train_true_data_time[n - 1]).count();
 
     // 计算平均步长
     double step_length = (step_count > 0) ? total_distance / step_count : 0.0;

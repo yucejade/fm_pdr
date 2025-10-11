@@ -1,0 +1,2 @@
+/usr/bin/ar qc libFusion.a CMakeFiles/Fusion.dir/FusionAhrs.c.o CMakeFiles/Fusion.dir/FusionCompass.c.o CMakeFiles/Fusion.dir/FusionOffset.c.o
+/usr/bin/ranlib libFusion.a

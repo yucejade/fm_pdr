@@ -1,4 +1,7 @@
+#include "json_operator.h"
 #include "pdr.h"
+#include <Eigen/src/Core/Matrix.h>
+#include <Eigen/src/Core/util/Meta.h>
 #include <algorithm>
 #include <chrono>
 #include <iostream>
@@ -41,8 +44,6 @@ public:
                   << "Options:\n"
                   << "  -t, --train <样本数据路径>	                                  在配置文件中的model_file_name路径下输出模型\n"
                   << "  -d, --dataset <PDR测试数据路径>	                              使用配置文件中的model_file_name路径下的模型文件对测试数据进行PDR检测\n"
-                  << "  -t, --train <样本数据路径> -d, --dataset <PDR测试数据路径>     直接使用训练样本训练结果对测试数据进行PDR检测（当配置文件中的model_file_name路径为空时，不输出模型）\n"
-                  << "  -o, --original-logic  使用原始开源工程的逻辑进行PDR检测\n"
                   << "  -e, --evaluation      是否打印指标评估\n"
                   << "  -h, --help            帮助信息\n";
     }
@@ -71,54 +72,75 @@ int main( int argc, char* argv[] )
     if ( pdr_dataset_path.empty() )
         pdr_dataset_path = parser.getOption( "--dataset" );
 
-    std::string org_dataset_path = parser.getOption( "-o" );
-    if ( org_dataset_path.empty() )
-        org_dataset_path = parser.getOption( "--original-logic" );
+    std::string pdr_config_path = parser.getOption( "-c" );
+    if ( pdr_config_path.empty() )
+        pdr_config_path = parser.getOption( "--config" );
 
     // 验证必要参数
-    if ( ( ( ! train_dataset_path.empty() || ! pdr_dataset_path.empty() ) && ! org_dataset_path.empty() ) || ( train_dataset_path.empty() && pdr_dataset_path.empty() && org_dataset_path.empty() ) )
+    if ( train_dataset_path.empty() && pdr_dataset_path.empty() )
     {
         std::cerr << "Argument error.\n";
         parser.showHelp();
         return 1;
     }
 
-    // 检查是否静默模式
+    // 默认配置文件路径
+    if (pdr_config_path.empty())
+        pdr_config_path = "../conf/config.json";
+
+    // 检查是否输出评估结果
     bool eval = parser.hasOption( "-e" ) || parser.hasOption( "--evaluation" );
 
     try
     {
+        PDRConfig        config                  = CFmJSONOperator::readPDRConfigFromJson( pdr_config_path.c_str() );
+        constexpr size_t test_case0_input_length = 60;  // 训练数据的前55秒作为起始数据
+
         // 创建测试用例
         if ( ! train_dataset_path.empty() )
         {
-            PDRConfig                  config = { ( char* )"Mean", ( char* )"model.dat", 4, 10, 20, 4.0, 0.95, 0.0035, 150 };
-            CFmDataLoader              data( train_dataset_path );
-            CFmDataLoader              train_data = slice( data, 0, data.m_len_input );
-            std::vector< PDRPosition > train_position;
-            CFmPDR                     pdr( config, train_data, train_position );
+            Eigen::MatrixXd   train_position;
+            CFmDataFileLoader data( config, test_case0_input_length, train_dataset_path );
+            CFmDataFileLoader train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
+            CFmPDR            pdr( config, train_data, train_position );
         }
-        else if ( ! pdr_dataset_path.empty() )
+        
+        if ( ! pdr_dataset_path.empty() )
         {
-            PDRConfig                  config = { ( char* )"Mean", ( char* )"model.dat", 4, 10, 20, 4.0, 0.95, 0.0035, 150 };
-            CFmDataLoader              data( pdr_dataset_path );
-            CFmDataLoader              pdr_data = slice( data, data.m_len_input, 0 );
-            CFmPDR                     pdr( config );
-            size_t                     i = 0, step = 2;
-            bool                       is_stop = false;
-            std::vector< PDRPosition > trajectory;
+            CFmDataFileLoader data( config, test_case0_input_length, pdr_dataset_path );
+            CFmDataFileLoader pdr_data = slice( data, data.get_train_data_size() * config.sample_rate, 0 );
+            CFmPDR            pdr( config );
+            size_t            i = 0, slice_interval_seconds = 2 * config.sample_rate;
+            bool              is_stop = false;
+            Eigen::MatrixXd   trajectory;
 
-            // 执行PDR算法
-            StartInfo si = pdr.start( pdr_data );
+            // 执行PDR算法，这里假定手动设置的初始位置为真实定位数据中的第一个真实位置点
+            VectorXd pos_x = data.get_true_data( TRUE_DATA_FIELD_LATITUDE );
+            VectorXd pos_y = data.get_true_data( TRUE_DATA_FIELD_LONGITUDE );
+            double   x0    = pos_x[ test_case0_input_length - 1 ];
+            double   y0    = pos_y[ test_case0_input_length - 1 ];
+
+            // for ( size_t idx = 0; idx < data.get_true_data_size(); ++idx )
+            //     std::cout << "True Data Point " << idx << ": (" << std::fixed << std::setprecision( 10 )  // 设置固定10位小数格式
+            //               << pos_x[ idx ] << ", " << pos_y[ idx ] << ")\n";
+
+            StartInfo si = pdr.start( x0, y0, pdr_data );
+
             while ( true )
             {
-                size_t        pdr_size = pdr_data.m_time_location.size();
-                size_t        s        = i * step;
-                size_t        e        = std::min( ( i + 1 ) * step, pdr_size );
-                CFmDataLoader segment  = slice( pdr_data, s, e );
+                size_t            pdr_size = pdr_data.get_true_data_size() * config.sample_rate;
+                size_t            s        = i * slice_interval_seconds;
+                size_t            e        = std::min( ( i + 1 ) * slice_interval_seconds, pdr_size );
+                CFmDataFileLoader segment  = slice( pdr_data, s, e );
 
-                auto                       start_time = std::chrono::steady_clock::now();
-                std::vector< PDRPosition > t          = pdr.pdr( si, segment );
-                if ( t.empty() )
+                // 计时开始，测试PDR处理时间
+                // auto start_time = std::chrono::steady_clock::now();
+
+                Eigen::MatrixXd t    = pdr.pdr( si, segment );
+                size_t          rows = t.rows();
+                size_t          cols = t.cols();
+
+                if ( rows == 0 )
                 {
                     if ( ! is_stop )
                         cout << "A stop event has been detected." << endl;
@@ -129,92 +151,36 @@ int main( int argc, char* argv[] )
                     if ( is_stop )
                         cout << "Resuming from stop event." << endl;
                     is_stop = false;
-                    for ( const auto& pos : t )
-                        trajectory.push_back( pos );
+
+                    size_t old_rows = trajectory.rows();
+                    trajectory.conservativeResize( old_rows + rows, cols );
+                    trajectory.block( old_rows, 0, rows, cols ) = t;
                 }
-                auto   end_time = std::chrono::steady_clock::now();
-                double time     = std::chrono::duration< double, std::micro >( end_time - start_time ).count();
-                cout << "Segment " << i << ": " << s << " to " << e << ", Time taken: " << time << " microseconds" << endl;
+
+                // auto   end_time = std::chrono::steady_clock::now();
+                // double time     = std::chrono::duration< double, std::micro >( end_time - start_time ).count();
+                // cout << "Segment " << i << ": " << s << " to " << e << ", Time taken: " << time << " microseconds" << endl;
 
                 if ( e >= pdr_size )
                     break;
                 i++;
             }
 
-            // 保存结果
-            pdr_data.set_location_output( trajectory, data.m_len_input );
-
-            if ( ! eval )
-                pdr.eval_model( pdr_data );
-        }
-        else if ( ! train_dataset_path.empty() && ! pdr_dataset_path.empty() )
-        {
-            PDRConfig                  config = { ( char* )"Linear", ( char* )"", 4, 10, 20, 4.0, 0.95, 0.0035, 50 };
-            CFmDataLoader              data( pdr_dataset_path );
-            CFmDataLoader              train_data = slice( data, 0, data.m_len_input );
-            CFmDataLoader              pdr_data   = slice( data, data.m_len_input, 0 );
-            std::vector< PDRPosition > train_position;
-            CFmPDR                     pdr( config, train_data, train_position );
-
-            // 执行PDR算法
-            StartInfo si = pdr.start( pdr_data );
-
-            std::vector< PDRPosition > trajectory = pdr.pdr( si, pdr_data );
-            if ( trajectory.empty() )
-                throw std::runtime_error( "PDR process returned empty trajectory." );
+            // 拼接训练数据结果和PDR数据结果
+            Eigen::MatrixXd   all_trajectory;
+            Eigen::MatrixXd   train_position;
+            CFmDataFileLoader train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
+            CFmPDR            train_pdr( config, train_data, train_position );
+            all_trajectory.resize( train_position.rows() + trajectory.rows(), train_position.cols() );
+            all_trajectory.topRows( train_position.rows() ) = train_position;
+            all_trajectory.bottomRows( trajectory.rows() ) = trajectory;
 
             // 保存结果
-            pdr_data.set_location_output( trajectory, data.m_len_input );
+            pdr_data.set_location_output( all_trajectory );
 
-            if ( ! eval )
-                pdr.eval_model( pdr_data );
+            if ( eval )
+                pdr_data.eval_model( all_trajectory );
         }
-        else if ( ! org_dataset_path.empty() )
-        {
-            PDRConfig                  config = { ( char* )"Mean", ( char* )"model.dat", 4, 10, 20, 4.0, 0.95, 0.0035, 10 };
-            CFmDataLoader              data( org_dataset_path );
-            std::vector< PDRPosition > train_position;
-            CFmPDR                     pdr( config, data, train_position );
-
-            // 执行PDR算法
-            pdr.pdr( data, "Mean" );
-            if ( ! eval )
-                pdr.eval_model( data );
-            return 0;
-        }
-        else
-        {
-            std::cerr << "Argument error.\n";
-            parser.showHelp();
-            return 1;
-        }
-
-        // CFmDataLoader train_data = slice(data, config.clean_data, data.m_len_input);
-
-        // // 获取启动信息
-        // StartInfo start_info = pdr.start(train_data);
-        // CFmDataLoader process_data = slice(data, data.m_len_input, 0);
-
-        // if (!silent)
-        // {
-        //     // 检查是否有有效位置数据
-        //     if (data.m_have_location_valid)
-        //     {
-        //         // 获取评估指标
-        //         double dist_error = data.get_dist_error();
-        //         double dir_error = data.get_dir_error();
-        //         double dir_ratio = data.get_dir_ratio();
-
-        //         // 输出评估结果
-        //         std::cout << "Distances error: " << dist_error << std::endl;
-        //         std::cout << "Direction error: " << dir_error << std::endl;
-        //         std::cout << "Direction ratio: " << dir_ratio << std::endl;
-        //     }
-        //     else
-        //     {
-        //         std::cout << "Location.csv not found, cannot calculate distance and direction error" << std::endl;
-        //     }
-        // }
     }
     catch ( const std::exception& e )
     {

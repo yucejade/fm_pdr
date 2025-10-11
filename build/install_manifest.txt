@@ -1,0 +1,10 @@
+/root/Dev/yuce/fm_pdr/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR
+/root/Dev/yuce/fm_pdr/build/package/conf/config.json
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Location_input.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Linear Accelerometer.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/preprocessed_org.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Gyroscope.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Barometer.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Accelerometer.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Location.csv
+/root/Dev/yuce/fm_pdr/build/package/test_case0/Magnetometer.csv

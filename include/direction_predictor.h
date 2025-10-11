@@ -1,32 +1,32 @@
-#include "data_loader.h"
-#include "DspFilters/Butterworth.h"
-#include "iir/Iir.h"
+#include "data_file_loader.h"
 #include "fm_pdr.h"
+#include "iir/Iir.h"
+
+typedef struct _StartInfo
+{
+    double e0_x;        ///< 初始东向量x
+    double e0_y;        ///< 初始东向量y
+    double e0_z;        ///< 初始东向量z
+    double direction0;  ///< 初始行进方向
+    double x0;          ///< 手动设置的初始x(经度)位置
+    double y0;          ///< 手动设置的初始y(维度)位置
+    double last_x;      ///< 每批次数据的最后x(经度)位置
+    double last_y;      ///< 每批次数据的最后y(纬度)位置
+} StartInfo;
 
 class CFmDirectionPredictor
 {
 public:
-    CFmDirectionPredictor(double butter_Wn);
+    CFmDirectionPredictor( const PDRConfig& config );
     ~CFmDirectionPredictor();
 
-    StartInfo start(const CFmDataLoader &start_data, const int least_point);
-    Eigen::VectorXd predict_direction(const StartInfo &start_info, const CFmDataLoader &process_data);
-
+    StartInfo       start( const CFmDataManager& start_data, const int least_point );
+    Eigen::VectorXd predict_direction( const StartInfo& start_info, const CFmDataManager& process_data );
 private:
-    Iir::Butterworth::LowPass<2, Iir::DirectFormII> m_f;
+    const PDRConfig& m_config;
+    Iir::Butterworth::LowPass< 2, Iir::DirectFormII > m_f;
 
-    VectorXd filtfilt(Iir::Butterworth::LowPass<2, Iir::DirectFormII> &filter, const VectorXd &input);
-    void butterworth_filter(const CFmDataLoader &data, MatrixXd &mag, MatrixXd &grv);
-    Eigen::MatrixXd calc_east_vector(const MatrixXd &mag, const MatrixXd &grv, const int &rows);
-
-//TODO:OLD
-public:
-    double direction_diff(double a, double b);
-    VectorXd direction_diff(const VectorXd &a, const VectorXd &b);
-    VectorXd direction_mix(const VectorXd &a, const VectorXd &b, double ratio);
-
-    VectorXd predict_direction(const CFmDataLoader &data_loader,
-                               double optimized_mode_ratio = 0.4,
-                               const int butter_N = 2,
-                               double butter_Wn = 0.005);
+    VectorXd        filtfilt( Iir::Butterworth::LowPass< 2, Iir::DirectFormII >& filter, const VectorXd& input );
+    void            butterworth_filter( const CFmDataManager& data, MatrixXd& mag, MatrixXd& grv );
+    Eigen::MatrixXd calc_east_vector( const MatrixXd& mag, const MatrixXd& grv, const int& rows );
 };

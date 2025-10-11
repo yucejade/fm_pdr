@@ -1,0 +1,1 @@
+/usr/bin/cc -g "CMakeFiles/Simple-Example.dir/main.c.o" -o Simple-Example  ../../Fusion/libFusion.a -lm

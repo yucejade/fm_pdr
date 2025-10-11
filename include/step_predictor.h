@@ -2,7 +2,7 @@
 #include <dlib/mlp.h>
 #include <dlib/svm.h>
 #include <dlib/statistics.h>
-#include "data_loader.h"
+#include "data_file_loader.h"
 
 using FeatureMatrix = dlib::matrix<double, 2, 1>;
 using LinearModel = dlib::decision_function<dlib::linear_kernel<FeatureMatrix>>;
@@ -12,9 +12,9 @@ using AnyModel = dlib::any_decision_function<FeatureMatrix>;
 class CFmStepPredictor
 {
 public:
-    CFmStepPredictor(const CFmDataLoader &train_data, int clean_start = 0, int clean_end = 0);
-    CFmStepPredictor();
-    ~CFmStepPredictor();
+    CFmStepPredictor(const PDRConfig &config, const CFmDataManager &train_data);
+    CFmStepPredictor(const PDRConfig &config);
+    virtual ~CFmStepPredictor();
 
     Eigen::VectorXi find_real_peak_indices(const Eigen::VectorXd &data,
                                            int range,
@@ -22,7 +22,7 @@ public:
                                            Eigen::VectorXd &filtered_accel_data,
                                            double &valid_peak_value,
                                            bool is_train = false);
-    FeatureMatrix calculate_features(const CFmDataLoader &data,
+    FeatureMatrix calculate_features(const CFmDataManager &data,
                                      const Eigen::VectorXi &real_peak_indices,
                                      const Eigen::VectorXd &filtered_accel_data,
                                      int start_step_index,
@@ -57,8 +57,6 @@ private:
                              std::vector<double> &y);
 
 private:
-    CFmDataLoader m_train_data;
-
-// TODO:OLD
-public:
+    const PDRConfig& m_config;
+    CFmDataManager m_train_data;
 };

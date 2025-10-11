@@ -1,0 +1,14 @@
+{
+  "sample_rate": 50,
+  "model_name": "Linear",
+  "model_file_name": "model.dat",
+  "clean_start": 4,
+  "clean_end": 0,
+  "default_east_point": 50,
+  "move_average": 10,
+  "min_distance": 20,
+  "distance_frac_step": 4.0,
+  "optimized_mode_ratio": 0.95,
+  "butter_wn": 0.0035,
+  "least_start_point": 150
+}

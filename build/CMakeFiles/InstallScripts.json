@@ -1,0 +1,11 @@
+{
+	"InstallScripts" : 
+	[
+		"/root/Dev/yuce/fm_pdr/build/cmake_install.cmake",
+		"/root/Dev/yuce/fm_pdr/build/thirdparty/Fusion-main/cmake_install.cmake",
+		"/root/Dev/yuce/fm_pdr/build/thirdparty/Fusion-main/Fusion/cmake_install.cmake",
+		"/root/Dev/yuce/fm_pdr/build/thirdparty/Fusion-main/Examples/Advanced/cmake_install.cmake",
+		"/root/Dev/yuce/fm_pdr/build/thirdparty/Fusion-main/Examples/Simple/cmake_install.cmake"
+	],
+	"Parallel" : false
+}
