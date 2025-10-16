@@ -57,12 +57,19 @@ typedef enum _TrueDataField
 class CFmDataManager
 {
 public:
-    CFmDataManager();
+    CFmDataManager( DataType type );
     CFmDataManager( const PDRConfig& config, DataType type, size_t train_data_size );
     virtual ~CFmDataManager();
 
     void set_location_output( const Eigen::MatrixXd& trajectory );
     void eval_model( const Eigen::MatrixXd& trajectory ) const;
+
+    inline const PDRConfig& get_config() const
+    {
+        if ( m_config == nullptr )
+            throw std::invalid_argument( "PDRConfig is null" );
+        return *m_config;
+    }
 
     inline DataType get_data_type() const
     {
@@ -210,6 +217,52 @@ public:
                 throw std::out_of_range( "TrueDataField out of range" );
         }
     }
+
+    inline void debug_print_data( int num_rows )
+    {
+        std::cout << "Time (first " << num_rows << " rows):" << std::endl;
+        for ( int i = 0; i < num_rows; ++i )
+            std::cout << std::fixed << std::setprecision( 3 ) << m_time( i ) << " ";
+        std::cout << std::endl;
+
+        std::cout << "Accelerometer (first " << num_rows << " rows):" << std::endl;
+        for ( int i = 0; i < num_rows; ++i )
+            std::cout << std::fixed << std::setprecision( 3 ) << "{" << m_a_x( i, 0 ) << "," << m_a_y( i, 0 ) << "," << m_a_z( i, 0 ) << "}" << std::endl;
+        std::cout << std::endl;
+
+        if ( m_have_line_accelererometer )
+        {
+            std::cout << "Linear Accelerometer (first " << num_rows << " rows):" << std::endl;
+            for ( int i = 0; i < num_rows; ++i )
+                std::cout << std::fixed << std::setprecision( 3 ) << "{" << m_la_x( i, 0 ) << "," << m_la_y( i, 0 ) << "," << m_la_z( i, 0 ) << "}" << std::endl;
+            std::cout << std::endl;
+        }
+
+        std::cout << "Gyroscope (first " << num_rows << " rows):" << std::endl;
+        for ( int i = 0; i < num_rows; ++i )
+            std::cout << std::fixed << std::setprecision( 3 ) << "{" << m_gs_x( i, 0 ) << "," << m_gs_y( i, 0 ) << "," << m_gs_z( i, 0 ) << "}" << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "Magnetometer (first " << num_rows << " rows):" << std::endl;
+        for ( int i = 0; i < num_rows; ++i )
+            std::cout << std::fixed << std::setprecision( 3 ) << "{" << m_m_x( i, 0 ) << "," << m_m_y( i, 0 ) << "," << m_m_z( i, 0 ) << "}" << std::endl;
+        std::cout << std::endl;
+
+        std::cout << "Gravity (first " << num_rows << " rows):" << std::endl;
+        for ( int i = 0; i < num_rows; ++i )
+            std::cout << std::fixed << std::setprecision( 3 ) << "{" << m_g_x( i, 0 ) << "," << m_g_y( i, 0 ) << "," << m_g_z( i, 0 ) << "}" << std::endl;
+        std::cout << std::endl;
+
+        if ( m_have_location_true )
+        {
+            int location_num_rows = num_rows / m_config->sample_rate + 1;
+            std::cout << "True Location (first " << location_num_rows << " rows):" << std::endl;
+            for ( int i = 0; i < location_num_rows; ++i )
+                std::cout << std::fixed << std::setprecision( 6 ) << "{" << m_time_location_true( i ) << m_latitude_true( i ) << "," << m_longitude_true( i ) << "," << m_height_true( i ) << "," << m_velocity_true( i ) << "," << m_direction_true( i ) << "," << m_horizontal_accuracy_true( i ) << ","
+                          << m_vertical_accuracy_true( i ) << "," << m_x_true( i ) << "," << m_y_true( i ) << "}" << std::endl;
+            std::cout << std::endl;
+        }
+    }
 protected:
     static constexpr double kK = 1e5;
     const PDRConfig*        m_config;
@@ -238,50 +291,60 @@ protected:
     double m_slice_start = 0.0;  // private
     double m_slice_end   = 0.0;  // private
 
-    VectorXd m_time;    // public
-    VectorXd m_a_x;     // private
-    VectorXd m_a_y;     // private
-    VectorXd m_a_z;     // private
-    VectorXd m_a_mag;   // public 计算步长
-    VectorXd m_la_x;    // private
-    VectorXd m_la_y;    // private
-    VectorXd m_la_z;    // private
-    VectorXd m_la_mag;  // private and delete
-    VectorXd m_gs_x;    // private
-    VectorXd m_gs_y;    // private
-    VectorXd m_gs_z;    // private
-    VectorXd m_gs_mag;  // private
-    VectorXd m_m_x;     // public 获取水平方向
-    VectorXd m_m_y;     // public 获取水平方向
-    VectorXd m_m_z;     // public 获取东向
-    VectorXd m_m_mag;   // private
-    VectorXd m_g_x;     // public 获取东向
-    VectorXd m_g_y;     // public 获取东向
-    VectorXd m_g_z;     // public 获取东向
-    VectorXd m_g_mag;   // private
+    MatrixXd m_a;
+    MatrixXd m_la;
+    MatrixXd m_gs;
+    MatrixXd m_m;
+    MatrixXd m_g;
+    MatrixXd m_location;       // 没有训练数据时，为空
+    MatrixXd m_location_true;  // 没有真实定位数据时，为空
 
-    VectorXd m_time_location;        // public
-    VectorXd m_latitude;             // private
-    VectorXd m_longitude;            // private
-    VectorXd m_height;               // private
-    VectorXd m_velocity;             // private
-    VectorXd m_direction;            // public 原始代码需要使用，做方向判断
-    VectorXd m_horizontal_accuracy;  // private
-    VectorXd m_vertical_accuracy;    // private
-    VectorXd m_x;                    // public 训练结果用
-    VectorXd m_y;                    // public 训练结果用
+    VectorXd m_time;
+    VectorXd m_a_x;
+    VectorXd m_a_y;
+    VectorXd m_a_z;
+    VectorXd m_a_mag;
+    VectorXd m_la_x;
+    VectorXd m_la_y;
+    VectorXd m_la_z;
+    VectorXd m_la_mag;
+    VectorXd m_gs_x;
+    VectorXd m_gs_y;
+    VectorXd m_gs_z;
+    VectorXd m_gs_mag;
+    VectorXd m_m_x;
+    VectorXd m_m_y;
+    VectorXd m_m_z;
+    VectorXd m_m_mag;
+    VectorXd m_g_x;
+    VectorXd m_g_y;
+    VectorXd m_g_z;
+    VectorXd m_g_mag;
 
-    VectorXd m_time_location_true;        // public
-    VectorXd m_latitude_true;             // private
-    VectorXd m_longitude_true;            // private
-    VectorXd m_height_true;               // private
-    VectorXd m_velocity_true;             // private
-    VectorXd m_direction_true;            // private
-    VectorXd m_horizontal_accuracy_true;  // private
-    VectorXd m_vertical_accuracy_true;    // private
-    VectorXd m_x_true;                    // private
-    VectorXd m_y_true;                    // private
+    VectorXd m_time_location;
+    VectorXd m_latitude;
+    VectorXd m_longitude;
+    VectorXd m_height;
+    VectorXd m_velocity;
+    VectorXd m_direction;
+    VectorXd m_horizontal_accuracy;
+    VectorXd m_vertical_accuracy;
+    VectorXd m_x;
+    VectorXd m_y;
+
+    VectorXd m_time_location_true;
+    VectorXd m_latitude_true;
+    VectorXd m_longitude_true;
+    VectorXd m_height_true;
+    VectorXd m_velocity_true;
+    VectorXd m_direction_true;
+    VectorXd m_horizontal_accuracy_true;
+    VectorXd m_vertical_accuracy_true;
+    VectorXd m_x_true;
+    VectorXd m_y_true;
 protected:
+    MatrixXd        nearest_neighbor_interpolation( const VectorXd& time_query, const VectorXd& time_data, const MatrixXd& data ) const;
+    VectorXd        magnitude( const MatrixXd& matrix );
     bool            save_to_csv( const MatrixXd& matrix, const string& filename, const vector< string >& col_names );
     Eigen::MatrixXd get_gravity_with_ahrs( Eigen::MatrixXd& accelerometer, Eigen::MatrixXd& gyroscope, Eigen::MatrixXd& magnetometer );
 private:

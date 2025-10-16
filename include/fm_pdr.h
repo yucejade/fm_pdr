@@ -32,6 +32,48 @@ typedef struct _PDRPoint
     double y;  ///< Y轴维度
 } PDRPoint;
 
+typedef struct _PDRSensorData
+{
+    double* acc_time;   ///< 时间戳（单位：秒）
+    double* acc_x;      ///< 加速度计X轴
+    double* acc_y;      ///< 加速度计Y轴
+    double* acc_z;      ///< 加速度计Z轴
+    double* lacc_time;  ///< 时间戳（单位：秒）
+    double* lacc_x;     ///< 线性加速度计X轴
+    double* lacc_y;     ///< 线性加速度计Y轴
+    double* lacc_z;     ///< 线性加速度计Z轴
+    double* gyr_time;   ///< 时间戳（单位：秒）
+    double* gyr_x;      ///< 陀螺仪X轴
+    double* gyr_y;      ///< 陀螺仪Y轴
+    double* gyr_z;      ///< 陀螺仪Z轴
+    double* mag_time;   ///< 时间戳（单位：秒）
+    double* mag_x;      ///< 磁力计X轴
+    double* mag_y;      ///< 磁力计Y轴
+    double* mag_z;      ///< 磁力计Z轴
+
+    unsigned long length;  ///< 数组长度
+} PDRSensorData;
+
+typedef struct _PDRTrueData
+{
+    double* time_location;        ///< 定位时间戳（单位：秒）
+    double* latitude;             ///< 纬度
+    double* longitude;            ///< 经度
+    double* height;               ///< 高度
+    double* velocity;             ///< 速度
+    double* direction;            ///< 方向
+    double* horizontal_accuracy;  ///< 水平精度
+    double* vertical_accuracy;    ///< 垂直精度
+
+    unsigned long length;  ///< 数组长度
+} PDRTrueData;
+
+typedef struct _PDRData
+{
+    PDRSensorData sensor_data;  ///< 传感器数据
+    PDRTrueData   true_data;    ///< 真实定位数据
+} PDRData;
+
 /// @struct PDRTrajectory
 /// @brief 行人航位推算(PDR)的定位数据结构
 typedef struct _PDRTrajectory
@@ -43,41 +85,33 @@ typedef struct _PDRTrajectory
     unsigned long length;     ///< 数组长度
 } PDRTrajectory;
 
-typedef enum
-{
-    PDR_SUCCESS       = 0,
-    PDR_INVALID_INPUT = -1,
-    PDR_SENSOR_ERROR  = -2,
-    PDR_CALIB_FAILED  = -3
-} PDRStatus;
-
-/// @fn int fm_pdr_init(void* train_data, PDRTrajectory** trajectories)
+/// @fn int fm_pdr_init(char* config_path, PDRData data, PDRTrajectory** trajectories)
 /// @brief 初始化PDR算法
 /// @param config_path [in] 配置文件路径
-/// @param train_data [in] PDR训练数据
+/// @param data [in] PDR训练数据
 /// @param trajectories [out] 结果位置数组，需预分配内存（可为NULL）
-/// @return >0: 成功
-///          0: trajectories为NULL时的成功返回
-///         <0: 错误码（如锚点无效）
-int fm_pdr_init( char* config_path, void* train_data, PDRTrajectory** trajectories );
+/// @return >0: 训练生成位置点数量
+///          0: trajectories传递NULL值并且初始化成功
+///         <0: 错误码
+int fm_pdr_init( char* config_path, PDRData data, PDRTrajectory** trajectories );
 
-/// @fn int fm_pdr_predict(void* process_data, PDRTrajectory** trajectories)
+/// @fn void fm_pdr_set_start_point(PDRPoint start_point);
+/// @brief 设置导航起点
+/// @param start_point [in] 起点数据指针
+void fm_pdr_set_start_point( PDRPoint start_point );
+
+/// @fn int fm_pdr_predict(PDRSensorData sensor_data, PDRTrajectory** trajectories)
 /// @brief 执行行人航位推算预测
-/// @param process_data [in] 待处理数据指针（TODO:类型待定）
+/// @param sensor_data [in] 待处理数据指针
 /// @param trajectories [out] 预测结果位置数组，需预分配内存（可为NULL）
 /// @return >0: 校正后位置点数量
-///          0: trajectories为NULL时的成功返回
-///         <0: 错误码（如锚点无效）
-int fm_pdr_predict( PDRPoint start_point, void* process_data, PDRTrajectory** trajectories );
+///          0: trajectories传递NULL值并且推算成功
+///         <0: 错误码
+int fm_pdr_predict( PDRSensorData sensor_data, PDRTrajectory** trajectories );
 
-/// @fn int fm_pdr_calibration(void *anchor_point, PDRTrajectory** trajectories);
-/// @brief 根据矫正点重新对行人航位路线进行校准
-/// @param process_data [in] 待处理数据指针（TODO:类型待定）
-/// @param trajectories [out] 预测结果位置数组，需预分配内存（可为NULL）
-/// @return >0: 校正后位置点数量
-///          0: trajectories为NULL时的成功返回
-///         <0: 错误码（如锚点无效）
-int fm_pdr_calibration( void* anchor_point, PDRTrajectory** trajectories );
+/// @fn void fm_pdr_free_trajectory()
+/// @brief 释放PDR算法资源
+void fm_pdr_free_trajectory();
 
 /// @fn void fm_pdr_uninit()
 /// @brief 释放PDR算法资源

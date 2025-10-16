@@ -119,7 +119,7 @@ StartInfo CFmDirectionPredictor::start( const CFmDataManager& start_data, const 
     // 计算前m_config.default_east_point行东向量
     int             number_of_point = std::min( k_rows, ( int )data_rows );
     Eigen::MatrixXd e               = calc_east_vector( mag, grv, number_of_point );
-
+    
     // 东向量平均值作为初始东向量
     Vector3d no_opt_e0 = e.colwise().mean();
 

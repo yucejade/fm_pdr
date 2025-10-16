@@ -2,7 +2,7 @@
 #include <dlib/mlp.h>
 #include <dlib/svm.h>
 #include <dlib/statistics.h>
-#include "data_file_loader.h"
+#include "data_manager.h"
 
 using FeatureMatrix = dlib::matrix<double, 2, 1>;
 using LinearModel = dlib::decision_function<dlib::linear_kernel<FeatureMatrix>>;
@@ -58,5 +58,5 @@ private:
 
 private:
     const PDRConfig& m_config;
-    CFmDataManager m_train_data;
+    CFmDataManager *m_train_data;
 };

@@ -4,7 +4,7 @@
 
 using namespace rapidcsv;
 
-CFmDataManager::CFmDataManager() : m_config( nullptr ), m_data_type( DATA_TYPE_FILE ), m_train_data_size( 0 ) {}
+CFmDataManager::CFmDataManager( DataType type ) : m_config( nullptr ), m_data_type( type ), m_train_data_size( 0 ) {}
 CFmDataManager::CFmDataManager( const PDRConfig& config, DataType type, size_t train_data_size ) : m_config( &config ), m_data_type( type ), m_train_data_size( train_data_size )
 {
     FusionOffsetInitialise( &m_offset, config.sample_rate );
@@ -98,6 +98,42 @@ void CFmDataManager::eval_model( const Eigen::MatrixXd& trajectory ) const
     cout << "Direction ratio: " << dir_ratio << endl;
 }
 
+MatrixXd CFmDataManager::nearest_neighbor_interpolation( const VectorXd& time_query, const VectorXd& time_data, const MatrixXd& data ) const
+{
+    // 结果矩阵：行数 = 查询时间点数，列数 = 数据维度数
+    MatrixXd data_interp( time_query.size(), data.cols() );
+
+    // 边界检查
+    if ( time_data.size() == 0 || data.rows() == 0 )
+        return data_interp;  // 返回空矩阵
+
+    size_t idx = 0;  // 当前数据索引
+    for ( int i = 0; i < time_query.size(); ++i )
+    {
+        const double t = time_query( i );
+
+        // 推进到包含当前时间点的区间
+        while ( idx < ( size_t )time_data.size() - 1 && t >= time_data( idx + 1 ) )
+            ++idx;
+
+        // 整行复制（处理所有维度）
+        data_interp.row( i ) = data.row( idx );
+    }
+
+    return data_interp;
+}
+
+// 计算向量模长的重载函数
+VectorXd CFmDataManager::magnitude( const MatrixXd& matrix )
+{
+    // 验证输入矩阵的列数 (应为 3 列)
+    if ( matrix.cols() != 3 )
+        throw invalid_argument( "Input matrix must have 3 columns" );
+
+    // 高效向量化计算 (避免循环)
+    return ( matrix.array().square().rowwise().sum() ).sqrt();
+}
+
 bool CFmDataManager::save_to_csv( const MatrixXd& matrix, const string& filename, const vector< string >& col_names )
 {
     // 验证列数匹配
@@ -165,7 +201,7 @@ double CFmDataManager::get_dir_error( const Eigen::MatrixXd& trajectory ) const
         // cout << "Valid Direction: " << m_direction_true[i] << ", Output Direction: " <<positions[ i ].direction << endl;
 
         // 计算原始差值
-        double raw_diff = abs( m_direction_true[ i ] - trajectory(i, 3) );
+        double raw_diff = abs( m_direction_true[ i ] - trajectory( i, 3 ) );
 
         // 计算循环差值（考虑角度周期性）
         double cyclic_diff = 360.0 - raw_diff;
@@ -209,7 +245,7 @@ double CFmDataManager::get_dir_ratio( const Eigen::MatrixXd& trajectory, double 
         // cout << "Valid Direction: " << m_direction_true[ i ] << ", Output Direction: " << trajectory(i, 3) << endl;
 
         // 计算原始差值
-        double raw_diff = abs( m_direction_true[ i ] - trajectory(i, 3) );
+        double raw_diff = abs( m_direction_true[ i ] - trajectory( i, 3 ) );
 
         // 计算循环差值（考虑角度周期性）
         double cyclic_diff = 360.0 - raw_diff;
@@ -261,8 +297,8 @@ double CFmDataManager::get_dist_error( const Eigen::MatrixXd& trajectory ) const
         double lon_valid = m_longitude_true[ i ];
 
         // 5.2 获取输出点坐标
-        double lat_output = trajectory(i, 1);
-        double lon_output = trajectory(i, 2);
+        double lat_output = trajectory( i, 1 );
+        double lon_output = trajectory( i, 2 );
 
         // cout << "Valid: (" << lat_valid << "," << lon_valid << "), Output: (" << lat_output << "," << lon_output << ")" << endl;
 
