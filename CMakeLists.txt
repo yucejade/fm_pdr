@@ -11,17 +11,22 @@ SET(VCPKG_PATH "$ENV{VCPKG_ROOT}/installed/x64-linux/include")
 OPTION(BUILD_WITH_THIRDPARTY "Build ThirdParty" ON)
 
 IF(BUILD_WITH_THIRDPARTY)
+    SET(BUILD_SHARED_LIBS OFF)
     ADD_SUBDIRECTORY(thirdparty/Fusion-main)
+    ADD_SUBDIRECTORY(thirdparty/dlib-20.0)
+    ADD_SUBDIRECTORY(thirdparty/iir1-master)
+    #ADD_SUBDIRECTORY(thirdparty/eigen-3.4.1)
+    #ADD_SUBDIRECTORY(thirdparty/geographiclib-main)
+    #ADD_SUBDIRECTORY(thirdparty/rapidjson-master)
+    #ADD_SUBDIRECTORY(thirdparty/rapidcsv-master)
 ENDIF()
 
 AUX_SOURCE_DIRECTORY(src DIR_SRCS)
 
-FIND_PATH(RAPIDCSV_INCLUDE_DIRS
-            NAMES "rapidcsv.h"
-            PATHS ${VCPKG_PATH})
 find_package(Eigen3 CONFIG REQUIRED)
 find_package (GeographicLib CONFIG REQUIRED)
 find_package(RapidJSON CONFIG REQUIRED)
+FIND_PATH(RAPIDCSV_INCLUDE_DIRS NAMES "rapidcsv.h" PATHS ${VCPKG_PATH})
 
 ADD_DEFINITIONS(-D_LINUX)
 
