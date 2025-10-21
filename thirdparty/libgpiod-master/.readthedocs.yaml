@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: LGPL-2.1-or-later
+# SPDX-FileCopyrightText: 2022 Kent Gibson <warthog618@gmail.com>
+# SPDX-FileCopyrightText: 2024 Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+
+#
+# This file is part of libgpiod.
+#
+# Read the Docs configuration file
+# See https://docs.readthedocs.io/en/stable/config-file/v2.html for details
+
+version: 2
+
+build:
+  os: ubuntu-24.04
+  tools:
+    python: "3.12"
+    rust: "1.86"
+  apt_packages:
+      - autoconf
+      - autoconf-archive
+      # doxygen is available by default, but just in case.
+      - doxygen
+      - help2man
+      - gi-docgen
+      - gir1.2-glib-2.0-dev
+      - gobject-introspection
+      - graphviz
+      # Needed by rust bindgen for stdbool.h
+      - libclang-dev
+      - libglib2.0-dev-bin
+      - libgudev-1.0-dev
+      - libtool
+      - pandoc
+      - pkg-config
+
+sphinx:
+   configuration: docs/conf.py
+
+python:
+  install:
+    - requirements: docs/requirements.txt

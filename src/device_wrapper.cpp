@@ -5,7 +5,7 @@ const std::string i2cDevice         = "/dev/i2c-1";
 uint8_t           deviceAddress_mmc = 0x30;
 uint8_t           deviceAddress_imu = 0x69;
 
-CFmtDeviceWrapper::CFmtDeviceWrapper()
+CFmDeviceWrapper::CFmDeviceWrapper()
 {
     // Initializing the MMC56x3
     if ( ! sensor_mmc.begin( deviceAddress_mmc, i2cDevice.c_str() ) )
@@ -24,18 +24,18 @@ CFmtDeviceWrapper::CFmtDeviceWrapper()
     std::this_thread::sleep_for( std::chrono::milliseconds( 1000 ) );
 }
 
-CFmtDeviceWrapper::~CFmtDeviceWrapper()
+CFmDeviceWrapper::~CFmDeviceWrapper()
 {
 }
 
-int64_t CFmtDeviceWrapper::GetMicrosecondTimestamp()
+int64_t CFmDeviceWrapper::GetMicrosecondTimestamp()
 {
     auto now      = std::chrono::system_clock::now();
     auto duration = now.time_since_epoch();
     return std::chrono::duration_cast< std::chrono::microseconds >( duration ).count();
 }
 
-bool CFmtDeviceWrapper::ReadData( PDRSensorData& sensor_data, int index )
+bool CFmDeviceWrapper::ReadData( PDRSensorData& sensor_data, int index )
 {
     double timestamp = (double)GetMicrosecondTimestamp() / 1e6;
 

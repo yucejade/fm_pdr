@@ -1,0 +1,19 @@
+# SPDX-License-Identifier: CC0-1.0
+# SPDX-FileCopyrightText: 2024-2025 Bartosz Golaszewski <bartosz.golaszewski@linaro.org>
+
+doxygen-output
+sphinx-output
+
+# Automatically generated .rst
+gpiodetect.rst
+gpioinfo.rst
+gpioget.rst
+gpioset.rst
+gpiomon.rst
+gpionotify.rst
+
+gpio-manager.rst
+
+dbus-io.gpiod1.*.rst
+gpiocli.rst
+gpiocli-*.rst

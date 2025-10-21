@@ -2,11 +2,11 @@
 #include "TDK40607P/ICM42670P.h"
 #include "fm_pdr.h"
 
-class CFmtDeviceWrapper
+class CFmDeviceWrapper
 {
 public:
-    CFmtDeviceWrapper();
-    ~CFmtDeviceWrapper();
+    CFmDeviceWrapper();
+    ~CFmDeviceWrapper();
 
     bool ReadData( PDRSensorData& sensor_data, int index );
 private:
