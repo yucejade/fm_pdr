@@ -8,14 +8,14 @@
             "name": "训练模型文件",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-b",
                 "-t",
-                "../test_case0"
+                "test_data/test_case0"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
+            "cwd": "${workspaceFolder}/build/package/bin",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
@@ -25,15 +25,15 @@
             "name": "PDR测试",
             "request": "launch",
             "type": "cppdbg",
-            "program": "${workspaceFolder}/build/package/bin/FM-Pedestrian-Dead-Reckoning-PDR",
+            "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-b",
                 "-d",
-                "../test_case0",
+                "test_data/test_case0",
                 "-e"
             ],
             "stopAtEntry": false,
-            "cwd": "${workspaceFolder}/build",
+            "cwd": "${workspaceFolder}/build/package/bin",
             "environment": [],
             "externalConsole": false,
             "MIMode": "gdb",
