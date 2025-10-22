@@ -73,6 +73,13 @@ build_thirdparty() {
         make -C ../../build/thirdparty/rapidjson-master install
         cd ../.. || exit 1
 
+        # 编译libgpiod-master库
+        mkdir -p build/thirdparty/libgpiod-master && cd build/thirdparty/libgpiod-master || exit 1
+        ../../../thirdparty/libgpiod-master/autogen.sh
+        ../../../thirdparty/libgpiod-master/configure --enable-shared=no --prefix=$(pwd)/../../package
+        make install
+        cd ../.. || exit 1
+
         echo "Thirdparty build completed."
     else
         echo "thirdparty directory not found, build failed."
