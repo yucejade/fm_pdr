@@ -63,6 +63,7 @@ ICM42670::~ICM42670()
     {
         close_spi_device();
     }
+#if 0
     if ( int_line )
     {
         gpiod_line_release( int_line );
@@ -71,6 +72,7 @@ ICM42670::~ICM42670()
     {
         gpiod_chip_close( gpio_chip );
     }
+#endif
 }
 
 bool ICM42670::open_i2c_device( const char* i2c_device, uint8_t address, uint32_t freq )
@@ -216,6 +218,7 @@ int ICM42670::getDataFromRegisters( inv_imu_sensor_event_t& evt )
 
 void ICM42670::enableInterrupt( uint8_t intpin, ICM42670_irq_handler handler )
 {
+#if 0
     if ( ! handler )
         return;
 
@@ -277,6 +280,7 @@ void ICM42670::enableInterrupt( uint8_t intpin, ICM42670_irq_handler handler )
         } );
 
     monitor = std::move( t );
+#endif
 }
 
 int ICM42670::enableFifoInterrupt( uint8_t intpin, ICM42670_irq_handler handler, uint8_t fifo_watermark )

@@ -1,6 +1,8 @@
 #include "data_buffer_loader.h"
 #include "data_file_loader.h"
 #include "data_manager.h"
+#include "fm_device_wrapper.h"
+#include "fm_pdr.h"
 #include "json_operator.h"
 #include "pdr.h"
 #include <Eigen/src/Core/Matrix.h>
@@ -48,10 +50,12 @@ public:
     {
         std::cout << "Usage: pdr [options]\n"
                   << "Options:\n"
-                  << "  -t, --train <样本数据路径>	                                  在配置文件中的model_file_name路径下输出模型\n"
-                  << "  -d, --dataset <PDR测试数据路径>	                              使用配置文件中的model_file_name路径下的模型文件对测试数据进行PDR检测\n"
-                  << "  -e, --evaluation      是否打印指标评估\n"
-                  << "  -h, --help            帮助信息\n";
+                  << "  -f, --file\t\t\t\t使用读数据文件方式进行行人航线推算，默认使用此模式；如果该选项为false，则直接使用传感器数据\n"
+                  << "  -e, --evaluation\t\t\t是否打印指标评估\n"
+                  << "  -c, --config <配置文件路径>\t\t指定PDR配置文件路径，默认使用../conf/config.json\n"
+                  << "  -t, --train <样本数据路径>\t\t在--file选项生效情况下，表示需要加载的<样本数据路径>；如果--file选项为false，则表示传感器数据的保存路径，训练模型输出到model_file_name配置项设置的路径下\n"
+                  << "  -d, --dataset <PDR数据路径>\t\t在--file选项生效情况下，表示需要加载的<PDR测试数据路径>；如果--file选项为false，则表示传感器数据保存路径，使用model_file_name配置项设置路径下的模型文件进行推算\n"
+                  << "  -h, --help\t\t\t\t帮助信息\n";
     }
 private:
     std::vector< std::string > tokens_;
@@ -113,7 +117,7 @@ PDRData LoadPDRData( const string& file_path )
     if ( ! fs::exists( full_name ) )
         throw runtime_error( "File not found: " + full_name );
     Document magnetometer = Document( full_name, LabelParams( 0, -1 ) );
-    g_mag_time           = magnetometer.GetColumn< double >( 0 );
+    g_mag_time            = magnetometer.GetColumn< double >( 0 );
     g_mag_x               = magnetometer.GetColumn< double >( 1 );
     g_mag_y               = magnetometer.GetColumn< double >( 2 );
     g_mag_z               = magnetometer.GetColumn< double >( 3 );
@@ -123,29 +127,29 @@ PDRData LoadPDRData( const string& file_path )
     if ( fs::exists( full_name ) )
     {
         Document linear_accelerometer = Document( full_name, LabelParams( 0, -1 ) );
-        g_lacc_time                  = linear_accelerometer.GetColumn< double >( 0 );
+        g_lacc_time                   = linear_accelerometer.GetColumn< double >( 0 );
         g_lacc_x                      = linear_accelerometer.GetColumn< double >( 1 );
         g_lacc_y                      = linear_accelerometer.GetColumn< double >( 2 );
         g_lacc_z                      = linear_accelerometer.GetColumn< double >( 3 );
     }
 
-    data_buffer.sensor_data.acc_time = g_acc_time.data();
-    data_buffer.sensor_data.acc_x    = g_acc_x.data();
-    data_buffer.sensor_data.acc_y    = g_acc_y.data();
-    data_buffer.sensor_data.acc_z    = g_acc_z.data();
+    data_buffer.sensor_data.acc_time  = g_acc_time.data();
+    data_buffer.sensor_data.acc_x     = g_acc_x.data();
+    data_buffer.sensor_data.acc_y     = g_acc_y.data();
+    data_buffer.sensor_data.acc_z     = g_acc_z.data();
     data_buffer.sensor_data.lacc_time = g_lacc_time.empty() ? nullptr : g_lacc_time.data();
-    data_buffer.sensor_data.lacc_x   = g_lacc_x.empty() ? nullptr : g_lacc_x.data();
-    data_buffer.sensor_data.lacc_y   = g_lacc_y.empty() ? nullptr : g_lacc_y.data();
-    data_buffer.sensor_data.lacc_z   = g_lacc_z.empty() ? nullptr : g_lacc_z.data();
-    data_buffer.sensor_data.gyr_time = g_gyr_time.data();
-    data_buffer.sensor_data.gyr_x    = g_gyr_x.data();
-    data_buffer.sensor_data.gyr_y    = g_gyr_y.data();
-    data_buffer.sensor_data.gyr_z    = g_gyr_z.data();
-    data_buffer.sensor_data.mag_time = g_mag_time.data();
-    data_buffer.sensor_data.mag_x    = g_mag_x.data();
-    data_buffer.sensor_data.mag_y    = g_mag_y.data();
-    data_buffer.sensor_data.mag_z    = g_mag_z.data();
-    data_buffer.sensor_data.length   = g_acc_time.size();
+    data_buffer.sensor_data.lacc_x    = g_lacc_x.empty() ? nullptr : g_lacc_x.data();
+    data_buffer.sensor_data.lacc_y    = g_lacc_y.empty() ? nullptr : g_lacc_y.data();
+    data_buffer.sensor_data.lacc_z    = g_lacc_z.empty() ? nullptr : g_lacc_z.data();
+    data_buffer.sensor_data.gyr_time  = g_gyr_time.data();
+    data_buffer.sensor_data.gyr_x     = g_gyr_x.data();
+    data_buffer.sensor_data.gyr_y     = g_gyr_y.data();
+    data_buffer.sensor_data.gyr_z     = g_gyr_z.data();
+    data_buffer.sensor_data.mag_time  = g_mag_time.data();
+    data_buffer.sensor_data.mag_x     = g_mag_x.data();
+    data_buffer.sensor_data.mag_y     = g_mag_y.data();
+    data_buffer.sensor_data.mag_z     = g_mag_z.data();
+    data_buffer.sensor_data.length    = g_acc_time.size();
 
     // 检查并读取真实位置数据，如果存在真实位置数据，则可以训练和评估，否则不需要读取真实位置数据（即：只能预测）
     full_name = file_path + "/" + "Location.csv";
@@ -211,22 +215,22 @@ int main( int argc, char* argv[] )
     if ( pdr_config_path.empty() )
         pdr_config_path = "../conf/config.json";
 
-    // 检查是否以buffer方式运行
-    bool buffer = parser.hasOption( "-b" ) || parser.hasOption( "--buffer" );
+    // 检查是否以file方式运行
+    bool file = parser.hasOption( "-f" ) || parser.hasOption( "--file" );
 
     // 检查是否输出评估结果
     bool eval = parser.hasOption( "-e" ) || parser.hasOption( "--evaluation" );
 
     try
     {
-        PDRConfig        config                  = CFmJSONOperator::readPDRConfigFromJson( pdr_config_path.c_str() );
-        constexpr size_t test_case0_input_length = 60;  // 训练数据的前55秒作为起始数据
+        PDRConfig          config = CFmJSONOperator::readPDRConfigFromJson( pdr_config_path.c_str() );
 
         // 创建测试用例
         if ( ! train_dataset_path.empty() )
         {
-            if ( ! buffer )
+            if ( file )
             {
+                constexpr size_t   test_case0_input_length = 60;
                 Eigen::MatrixXd    train_position;
                 CFmDataFileLoader  data( config, test_case0_input_length, train_dataset_path );
                 CFmDataFileLoader* train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
@@ -235,128 +239,113 @@ int main( int argc, char* argv[] )
             }
             else
             {
-                Eigen::MatrixXd      train_position;
-                PDRData              data_buffer = LoadPDRData( train_dataset_path );
-                CFmDataBufferLoader  data( config, test_case0_input_length, data_buffer );
-                CFmDataBufferLoader* train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
-                CFmPDR               pdr( config, *train_data, train_position );
-                delete train_data;
+                // TODO: 因为现有设备没有GPS模块，暂时无法进行训练数据的采集和模型训练，请使用手机生成相关数据文件进行训练
             }
         }
 
         if ( ! pdr_dataset_path.empty() )
         {
-            CFmDataManager* pdr_data   = nullptr;
-            CFmDataManager* train_data = nullptr;
-            double          x0;
-            double          y0;
-
-            if ( ! buffer )
+            if ( file )
             {
+                constexpr size_t  test_case0_input_length = 60;
                 CFmDataFileLoader data( config, test_case0_input_length, pdr_dataset_path );
-                pdr_data   = slice( data, data.get_train_data_size() * config.sample_rate, 0 );
-                train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
+                CFmDataManager*   pdr_data   = slice( data, data.get_train_data_size() * config.sample_rate, 0 );
+                CFmDataManager*   train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
+                VectorXd          pos_x      = data.get_true_data( TRUE_DATA_FIELD_LATITUDE );
+                VectorXd          pos_y      = data.get_true_data( TRUE_DATA_FIELD_LONGITUDE );
+                double            x0         = pos_x[ test_case0_input_length - 1 ];
+                double            y0         = pos_y[ test_case0_input_length - 1 ];
+                CFmPDR            pdr( config );
+                size_t            i                      = 0;
+                size_t            slice_interval_seconds = 2 * config.sample_rate;
+                bool              is_stop                = false;
+                Eigen::MatrixXd   trajectory;
 
-                VectorXd pos_x = data.get_true_data( TRUE_DATA_FIELD_LATITUDE );
-                VectorXd pos_y = data.get_true_data( TRUE_DATA_FIELD_LONGITUDE );
-                x0             = pos_x[ test_case0_input_length - 1 ];
-                y0             = pos_y[ test_case0_input_length - 1 ];
+                // 执行PDR算法，这里假定手动设置的初始位置为真实定位数据中的第一个真实位置点
+                // for ( size_t idx = 0; idx < data.get_true_data_size(); ++idx )
+                //     std::cout << "True Data Point " << idx << ": (" << std::fixed << std::setprecision( 10 )  // 设置固定10位小数格式
+                //               << pos_x[ idx ] << ", " << pos_y[ idx ] << ")\n";
+                StartInfo si = pdr.start( x0, y0, *pdr_data );
+
+                while ( true )
+                {
+                    size_t pdr_size = pdr_data->get_true_data_size() * config.sample_rate;
+                    size_t s        = i * slice_interval_seconds;
+                    size_t e        = std::min( ( i + 1 ) * slice_interval_seconds, pdr_size );
+                    
+                    // 计时开始，测试PDR处理时间
+                    // auto start_time = std::chrono::steady_clock::now();
+                    CFmDataManager* segment = slice( dynamic_cast< CFmDataFileLoader& >( *pdr_data ), s, e );
+                    Eigen::MatrixXd t = pdr.pdr( si, *segment );
+                    delete segment;
+
+                    size_t rows = t.rows();
+                    size_t cols = t.cols();
+                    if ( rows == 0 )
+                    {
+                        if ( ! is_stop )
+                            cout << "A stop event has been detected." << endl;
+                        is_stop = true;
+                    }
+                    else
+                    {
+                        if ( is_stop )
+                            cout << "Resuming from stop event." << endl;
+                        is_stop = false;
+
+                        size_t old_rows = trajectory.rows();
+                        trajectory.conservativeResize( old_rows + rows, cols );
+                        trajectory.block( old_rows, 0, rows, cols ) = t;
+                    }
+
+                    // auto   end_time = std::chrono::steady_clock::now();
+                    // double time     = std::chrono::duration< double, std::micro >( end_time - start_time ).count();
+                    // cout << "Segment " << i << ": " << s << " to " << e << ", Time taken: " << time << " microseconds" << endl;
+
+                    if ( e >= pdr_size )
+                        break;
+                    i++;
+                }
+
+                // 拼接训练数据结果和PDR数据结果
+                Eigen::MatrixXd all_trajectory;
+                Eigen::MatrixXd train_position;
+                CFmPDR          train_pdr( config, *train_data, train_position );
+                all_trajectory.resize( train_position.rows() + trajectory.rows(), train_position.cols() );
+                all_trajectory.topRows( train_position.rows() ) = train_position;
+                all_trajectory.bottomRows( trajectory.rows() )  = trajectory;
+
+                // 保存结果
+                pdr_data->set_location_output( all_trajectory );
+
+                if ( eval )
+                    pdr_data->eval_model( all_trajectory );
+
+                delete pdr_data;
+                delete train_data;
             }
             else
             {
-                PDRData             data_buffer = LoadPDRData( pdr_dataset_path );
-                CFmDataBufferLoader data( config, test_case0_input_length, data_buffer );
-                pdr_data   = slice( data, data.get_train_data_size() * config.sample_rate, 0 );
-                train_data = slice( data, 0, data.get_train_data_size() * config.sample_rate );
+                SensorData sensor_data;
+                fm_device_handle_t device_handle;
 
-                VectorXd pos_x = data.get_true_data( TRUE_DATA_FIELD_LATITUDE );
-                VectorXd pos_y = data.get_true_data( TRUE_DATA_FIELD_LONGITUDE );
-                x0             = pos_x[ test_case0_input_length - 1 ];
-                y0             = pos_y[ test_case0_input_length - 1 ];
-
-                // CFmPDR              pdr( config );
-                // CFmDataBufferLoader data1( config, test_case0_input_length, data_buffer );
-                // pdr_data      = slice( data1, data1.get_train_data_size() * config.sample_rate, 0 );
-                // StartInfo si1 = pdr.start( x0, y0, *pdr_data );
-                // cout << "Buffer StartInfo: e0_x=" << si1.e0_x << ", e0_y=" << si1.e0_y << ", e0_z=" << si1.e0_z << endl;
-
-                // CFmDataFileLoader data2( config, test_case0_input_length, pdr_dataset_path );
-                // pdr_data      = slice( data2, data2.get_train_data_size() * config.sample_rate, 0 );
-                // StartInfo si2 = pdr.start( x0, y0, *pdr_data );
-                // cout << "File StartInfo: e0_x=" << si2.e0_x << ", e0_y=" << si2.e0_y << ", e0_z=" << si2.e0_z << endl;
-            }
-
-            CFmPDR          pdr( config );
-            size_t          i = 0, slice_interval_seconds = 2 * config.sample_rate;
-            bool            is_stop = false;
-            Eigen::MatrixXd trajectory;
-
-            // 执行PDR算法，这里假定手动设置的初始位置为真实定位数据中的第一个真实位置点
-            // for ( size_t idx = 0; idx < data.get_true_data_size(); ++idx )
-            //     std::cout << "True Data Point " << idx << ": (" << std::fixed << std::setprecision( 10 )  // 设置固定10位小数格式
-            //               << pos_x[ idx ] << ", " << pos_y[ idx ] << ")\n";
-            StartInfo si = pdr.start( x0, y0, *pdr_data );
-
-            while ( true )
-            {
-                size_t pdr_size = pdr_data->get_true_data_size() * config.sample_rate;
-                size_t s        = i * slice_interval_seconds;
-                size_t e        = std::min( ( i + 1 ) * slice_interval_seconds, pdr_size );
-
-                CFmDataManager* segment = nullptr;
-                if ( ! buffer )
-                    segment = slice( dynamic_cast< CFmDataFileLoader& >( *pdr_data ), s, e );
-                else
-                    segment = slice( dynamic_cast< CFmDataBufferLoader& >( *pdr_data ), s, e );
-                // 计时开始，测试PDR处理时间
-                // auto start_time = std::chrono::steady_clock::now();
-                Eigen::MatrixXd t = pdr.pdr( si, *segment );
-                delete segment;
-
-                size_t rows = t.rows();
-                size_t cols = t.cols();
-                if ( rows == 0 )
+                int ret = fm_device_init( config.sample_rate, &device_handle );
+                if ( ret != 0 )
                 {
-                    if ( ! is_stop )
-                        cout << "A stop event has been detected." << endl;
-                    is_stop = true;
-                }
-                else
-                {
-                    if ( is_stop )
-                        cout << "Resuming from stop event." << endl;
-                    is_stop = false;
-
-                    size_t old_rows = trajectory.rows();
-                    trajectory.conservativeResize( old_rows + rows, cols );
-                    trajectory.block( old_rows, 0, rows, cols ) = t;
+                    std::cerr << "Failed to initialize device wrapper, error code: " << ret << std::endl;
+                    return 1;
                 }
 
-                // auto   end_time = std::chrono::steady_clock::now();
-                // double time     = std::chrono::duration< double, std::micro >( end_time - start_time ).count();
-                // cout << "Segment " << i << ": " << s << " to " << e << ", Time taken: " << time << " microseconds" << endl;
+                ret = fm_device_read( device_handle, 0, 0, &sensor_data );
+                if ( ret != 0 )
+                {
+                    std::cerr << "Failed to read sensor data, error code: " << ret << std::endl;
+                    fm_device_uninit( device_handle );
+                    return 1;
+                }
 
-                if ( e >= pdr_size )
-                    break;
-                i++;
+                fm_device_uninit( device_handle );
             }
-
-            // 拼接训练数据结果和PDR数据结果
-            Eigen::MatrixXd all_trajectory;
-            Eigen::MatrixXd train_position;
-            CFmPDR          train_pdr( config, *train_data, train_position );
-            all_trajectory.resize( train_position.rows() + trajectory.rows(), train_position.cols() );
-            all_trajectory.topRows( train_position.rows() ) = train_position;
-            all_trajectory.bottomRows( trajectory.rows() )  = trajectory;
-
-            // 保存结果
-            pdr_data->set_location_output( all_trajectory );
-
-            if ( eval )
-                pdr_data->eval_model( all_trajectory );
-
-            delete pdr_data;
-            delete train_data;
         }
     }
     catch ( const std::exception& e )

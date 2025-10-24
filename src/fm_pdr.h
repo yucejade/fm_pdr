@@ -51,7 +51,7 @@ typedef struct _PDRSensorData
     double* mag_y;      ///< 磁力计Y轴
     double* mag_z;      ///< 磁力计Z轴
 
-    unsigned long length;  ///< 数组长度
+    unsigned long length;  ///< 数组有效长度
 } PDRSensorData;
 
 typedef struct _PDRTrueData
@@ -65,7 +65,7 @@ typedef struct _PDRTrueData
     double* horizontal_accuracy;  ///< 水平精度
     double* vertical_accuracy;    ///< 垂直精度
 
-    unsigned long length;  ///< 数组长度
+    unsigned long length;  ///< 数组有效长度
 } PDRTrueData;
 
 typedef struct _PDRData

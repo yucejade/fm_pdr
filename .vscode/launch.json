@@ -10,7 +10,7 @@
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
-                "-b",
+                "-f",
                 "-t",
                 "test_data/test_case0"
             ],
@@ -27,7 +27,7 @@
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
-                "-b",
+                "-f",
                 "-d",
                 "test_data/test_case0",
                 "-e"
