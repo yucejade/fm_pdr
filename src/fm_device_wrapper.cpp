@@ -1,5 +1,6 @@
 #include "fm_device_wrapper.h"
 #include "device_wrapper.h"
+#include <cstdint>
 #include <memory.h>
 #include <stdexcept>
 #include <chrono>
@@ -22,10 +23,12 @@ int fm_device_init( int sample_rate, fm_device_handle_t* device_handle )
     }
 }
 
-int fm_device_read( fm_device_handle_t device_handle, int count, int rewrite, SensorData* data )
+int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, int rewrite, SensorData* data )
 {
     if ( ! device_handle.handler || ! data )
         return -1;
+
+    memset( data, 0x00, sizeof( SensorData ) );
 
     if ( rewrite )
         fm_device_free_sensor_data( *data );
@@ -112,10 +115,17 @@ int fm_device_read( fm_device_handle_t device_handle, int count, int rewrite, Se
         memset( data->sensor_data.mag_z, 0x00, sizeof( double ) * data->real_length );
     }
 
+    CFmDeviceWrapper* wrapper = static_cast< CFmDeviceWrapper* >( device_handle.handler );
     for (unsigned long i = 0; i < data->real_length; ++i)
     {
-        static_cast< CFmDeviceWrapper* >( device_handle.handler )->ReadData( *data, i );
-        std::this_thread::sleep_for(std::chrono::microseconds(device_handle.sample_rate > 0 ? 1000000 / device_handle.sample_rate : 0));
+        int64_t timestamp = 0;
+        wrapper->ReadData( *data, i, (bool)is_first, timestamp );
+        data->sensor_data.length = i + 1;
+        is_first = 0;
+        
+        int64_t time_consuming = wrapper->GetMicrosecondTimestamp() - timestamp;
+        int64_t target_time = 1000000 / device_handle.sample_rate;
+        std::this_thread::sleep_for(std::chrono::microseconds(device_handle.sample_rate > 0 ? (target_time - time_consuming) : 0));
     }
 
     return 0;

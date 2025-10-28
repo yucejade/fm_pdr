@@ -74,11 +74,5 @@
         "charconv": "cpp",
         "source_location": "cpp",
         "core": "cpp"
-    },
-    "cmake.sourceDirectory": "/root/Dev/yuce/fm_pdr/example",
-    "clangd.path": "/usr/bin/clangd",
-    "C_Cpp.default.compileCommands": [
-        "/root/Dev/yuce/fm_pdr/example/build/compile_commands.json",
-        "/root/Dev/yuce/fm_pdr/src/build/compile_commands.json"
-    ]
+    }
 }

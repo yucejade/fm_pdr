@@ -178,6 +178,13 @@ PDRData LoadPDRData( const string& file_path )
     return data_buffer;
 }
 
+void convert_sensor_data_to_pdr_data( SensorData* sensor_data, PDRData* pdr_data )
+{
+    memset( pdr_data, 0x00, sizeof( PDRData ) );
+
+    pdr_data->sensor_data = sensor_data->sensor_data;
+}
+
 int main( int argc, char* argv[] )
 {
     // 解析命令行参数
@@ -223,7 +230,7 @@ int main( int argc, char* argv[] )
 
     try
     {
-        PDRConfig          config = CFmJSONOperator::readPDRConfigFromJson( pdr_config_path.c_str() );
+        PDRConfig config = CFmJSONOperator::readPDRConfigFromJson( pdr_config_path.c_str() );
 
         // 创建测试用例
         if ( ! train_dataset_path.empty() )
@@ -272,11 +279,11 @@ int main( int argc, char* argv[] )
                     size_t pdr_size = pdr_data->get_true_data_size() * config.sample_rate;
                     size_t s        = i * slice_interval_seconds;
                     size_t e        = std::min( ( i + 1 ) * slice_interval_seconds, pdr_size );
-                    
+
                     // 计时开始，测试PDR处理时间
                     // auto start_time = std::chrono::steady_clock::now();
                     CFmDataManager* segment = slice( dynamic_cast< CFmDataFileLoader& >( *pdr_data ), s, e );
-                    Eigen::MatrixXd t = pdr.pdr( si, *segment );
+                    Eigen::MatrixXd t       = pdr.pdr( si, *segment );
                     delete segment;
 
                     size_t rows = t.rows();
@@ -326,8 +333,10 @@ int main( int argc, char* argv[] )
             }
             else
             {
-                SensorData sensor_data;
+                PDRData            pdr_data;
+                SensorData         sensor_data;
                 fm_device_handle_t device_handle;
+                int                is_first = 1;
 
                 int ret = fm_device_init( config.sample_rate, &device_handle );
                 if ( ret != 0 )
@@ -336,14 +345,30 @@ int main( int argc, char* argv[] )
                     return 1;
                 }
 
-                ret = fm_device_read( device_handle, 0, 0, &sensor_data );
-                if ( ret != 0 )
+                while ( true )
                 {
-                    std::cerr << "Failed to read sensor data, error code: " << ret << std::endl;
-                    fm_device_uninit( device_handle );
-                    return 1;
+                    // 采集传感器数据
+                    ret = fm_device_read( device_handle, is_first, config.sample_rate * 2, 1, &sensor_data );
+                    if ( ret != 0 )
+                    {
+                        std::cerr << "Failed to read sensor data, error code: " << ret << std::endl;
+                        fm_device_uninit( device_handle );
+                        return 1;
+                    }
+
+                    is_first = 0;
+
+                    // 处理采集到的传感器数据
+                    convert_sensor_data_to_pdr_data( &sensor_data, &pdr_data );
+                    CFmDataBufferLoader data_loader( config, 0, pdr_data );
+
+                    // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
+                    int result = fm_pdr_save_sensor_data( ( char* )pdr_dataset_path.c_str(), &pdr_data.sensor_data );
+                    if ( result != 0 )
+                        std::cout << "保存失败，错误码: " << result << std::endl;
                 }
 
+                fm_device_free_sensor_data( sensor_data );
                 fm_device_uninit( device_handle );
             }
         }

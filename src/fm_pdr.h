@@ -85,15 +85,16 @@ typedef struct _PDRTrajectory
     unsigned long length;     ///< 数组长度
 } PDRTrajectory;
 
-/// @fn int fm_pdr_init(char* config_path, PDRData data, PDRTrajectory** trajectories)
+/// @fn int fm_pdr_init(char* config_path, char* train_file_path, PDRConfig *config, PDRTrajectory** trajectories)
 /// @brief 初始化PDR算法
 /// @param config_path [in] 配置文件路径
-/// @param data [in] PDR训练数据
-/// @param trajectories [out] 结果位置数组，需预分配内存（可为NULL）
+/// @param train_file_path [in] PDR训练数据路径，传递NULL表示不进行训练，只进行预测（使用配置项中的模型路径）和读取配置
+/// @param config [in] PDR配置参数
+/// @param trajectories [out] 结果真实轨迹，需预分配内存（可为NULL）
 /// @return >0: 训练生成位置点数量
-///          0: trajectories传递NULL值并且初始化成功
+///         =0: trajectories传递NULL值并且初始化成功
 ///         <0: 错误码
-int fm_pdr_init( char* config_path, PDRData data, PDRTrajectory** trajectories );
+int fm_pdr_init( char* config_path, char* train_file_path, PDRConfig* config, PDRTrajectory** trajectories );
 
 /// @fn void fm_pdr_set_start_point(PDRPoint start_point);
 /// @brief 设置导航起点
@@ -105,13 +106,20 @@ void fm_pdr_set_start_point( PDRPoint start_point );
 /// @param sensor_data [in] 待处理数据指针
 /// @param trajectories [out] 预测结果位置数组，需预分配内存（可为NULL）
 /// @return >0: 校正后位置点数量
-///          0: trajectories传递NULL值并且推算成功
+///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
 int fm_pdr_predict( PDRSensorData sensor_data, PDRTrajectory** trajectories );
 
 /// @fn void fm_pdr_free_trajectory()
 /// @brief 释放PDR算法资源
 void fm_pdr_free_trajectory();
+
+/// @fn void fm_pdr_save_sensor_data(char *file_path, PDRSensorData *sensor_data)
+/// @brief 保存传感器数据，函数可以重复调用，每次追加写入数据
+/// @param file_path [in] 保存文件路径
+/// @param sensor_data [in] 传感器数据指针
+/// @return 0: 保存成功；!=0: 保存失败
+int fm_pdr_save_sensor_data(char *dir_path, PDRSensorData *sensor_data);
 
 /// @fn void fm_pdr_uninit()
 /// @brief 释放PDR算法资源

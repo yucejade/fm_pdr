@@ -1,6 +1,7 @@
 #include "MMC56x3/MMC56x3.h"
 #include "TDK40607P/ICM42670P.h"
 #include "fm_device_wrapper.h"
+#include <cstddef>
 
 class CFmDeviceWrapper
 {
@@ -8,10 +9,11 @@ public:
     CFmDeviceWrapper(int sample_rate);
     ~CFmDeviceWrapper();
 
-    bool ReadData( SensorData& sensor_data, unsigned long index );
-private:
-    MMC56x3 sensor_mmc;
-    ICM42670 sensor_imu;
-private:
+    bool ReadData( SensorData& sensor_data, unsigned long index, bool is_first, int64_t &timestamp );
     int64_t GetMicrosecondTimestamp();
+private:
+    MMC56x3 m_sensor_mmc;
+    ICM42670 m_sensor_imu;
+
+    int64_t m_start_time_ms = 0;
 };

@@ -27,9 +27,8 @@
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
-                "-f",
                 "-d",
-                "test_data/test_case0",
+                "sensor_data",
                 "-e"
             ],
             "stopAtEntry": false,

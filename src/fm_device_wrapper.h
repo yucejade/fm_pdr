@@ -30,14 +30,16 @@ typedef struct _fm_device_handle_t
 ///         <0: 错误码
 int fm_device_init( int sample_rate, fm_device_handle_t* device_handle );
 
-/// @fn int fm_device_read(void *device_handle, int count, int rewrite, SensorData data);
+/// @fn int fm_device_read(void *device_handle, int is_first, int count, int rewrite, SensorData data);
 /// @brief 读取传感器数据
+/// @param device_handle [in] 设备句柄
+/// @param is_first [in] 是否为首次读取，!=0表示是首次读取，0表示非首次读取
 /// @param count [in] 传感器采样时长(微秒)，大于0时表示采集数据个数，小于等于0时表示采集一次数据
-/// @param data [in] 是否覆盖读取数据，!=0表示覆盖，0表示重新创建内存
+/// @param rewrite [in] 是否覆盖读取数据，!=0表示覆盖，0表示重新创建内存
 /// @param data [in] 读取的传感器数据
 /// @return 0: 读取成功
 ///         <0: 错误码
-int fm_device_read( fm_device_handle_t device_handle, int count, int rewrite, SensorData* data );
+int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, int rewrite, SensorData* data );
 
 /// @fn int fm_device_free_sensor_data(void *device_handle, SensorData data);
 /// @brief 释放传感器数据内存
