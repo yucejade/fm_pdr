@@ -21,63 +21,69 @@ build_thirdparty() {
         mkdir -p ./build/package/lib/
         mkdir -p ./build/package/include/
 
-        # 进入第三方库目录并编译
-        # 编译openblas库
-        cd thirdparty/OpenBLAS-develop || exit 1
-        cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/OpenBLAS-develop install
-        cd ../.. || exit 1
+       # # 进入第三方库目录并编译
+       # # 编译openblas库
+       # cd thirdparty/OpenBLAS-develop || exit 1
+       # cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/OpenBLAS-develop install
+       # cd ../.. || exit 1
 
-        # 编译Eigen库
-        cd thirdparty/eigen-3.4.1 || exit 1
-        cmake -B ../../build/thirdparty/eigen-3.4.1 -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/eigen-3.4.1 install
-        cd ../.. || exit 1
+       # # 编译Eigen库
+       # cd thirdparty/eigen-3.4.1 || exit 1
+       # cmake -B ../../build/thirdparty/eigen-3.4.1 -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/eigen-3.4.1 install
+       # cd ../.. || exit 1
 
-        # 编译Fusion-main库
-        cd thirdparty/Fusion-main || exit 1
-        cmake -B ../../build/thirdparty/Fusion-main -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/Fusion-main
-        cp -r ../../build/thirdparty/Fusion-main/Fusion/libFusion.a ../../build/package/lib/
-        mkdir -p ../../build/package/include/Fusion/
-        cp -r Fusion/*.h ../../build/package/include/Fusion/
-        cd ../.. || exit 1
+       # # 编译Fusion-main库
+       # cd thirdparty/Fusion-main || exit 1
+       # cmake -B ../../build/thirdparty/Fusion-main -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/Fusion-main
+       # cp -r ../../build/thirdparty/Fusion-main/Fusion/libFusion.a ../../build/package/lib/
+       # mkdir -p ../../build/package/include/Fusion/
+       # cp -r Fusion/*.h ../../build/package/include/Fusion/
+       # cd ../.. || exit 1
 
-        # 编译iir1-master库
-        cd thirdparty/iir1-master || exit 1
-        cmake -B ../../build/thirdparty/iir1-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/iir1-master install
-        cd ../.. || exit 1
+       # # 编译iir1-master库
+       # cd thirdparty/iir1-master || exit 1
+       # cmake -B ../../build/thirdparty/iir1-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/iir1-master install
+       # cd ../.. || exit 1
 
-        # 编译geographiclib-main库
-        cd thirdparty/geographiclib-main || exit 1
-        cmake -B ../../build/thirdparty/geographiclib-main -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/geographiclib-main install
-        cd ../.. || exit 1
+       # # 编译geographiclib-main库
+       # cd thirdparty/geographiclib-main || exit 1
+       # cmake -B ../../build/thirdparty/geographiclib-main -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/geographiclib-main install
+       # cd ../.. || exit 1
 
-        # 编译dlib-20.0库
-        cd thirdparty/dlib-20.0 || exit 1
-        cmake -B ../../build/thirdparty/dlib-20.0 -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/dlib-20.0 install
-        cd ../.. || exit 1
+       # # 编译dlib-20.0库
+       # cd thirdparty/dlib-20.0 || exit 1
+       # cmake -B ../../build/thirdparty/dlib-20.0 -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/dlib-20.0 install
+       # cd ../.. || exit 1
 
-        # 编译rapidcsv-master库
-        cd thirdparty/rapidcsv-master || exit 1
-        cmake -B ../../build/thirdparty/rapidcsv-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/rapidcsv-master install
-        cd ../.. || exit 1
+       # # 编译rapidcsv-master库
+       # cd thirdparty/rapidcsv-master || exit 1
+       # cmake -B ../../build/thirdparty/rapidcsv-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/rapidcsv-master install
+       # cd ../.. || exit 1
 
-        # 编译rapidjson-master库
-        cd thirdparty/rapidjson-master || exit 1
-        cmake -B ../../build/thirdparty/rapidjson-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
-        make -C ../../build/thirdparty/rapidjson-master install
-        cd ../.. || exit 1
+       # # 编译rapidjson-master库
+       # cd thirdparty/rapidjson-master || exit 1
+       # cmake -B ../../build/thirdparty/rapidjson-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+       # make -C ../../build/thirdparty/rapidjson-master install
+       # cd ../.. || exit 1
 
         # 编译libgpiod-master库
         mkdir -p build/thirdparty/libgpiod-master && cd build/thirdparty/libgpiod-master || exit 1
         ../../../thirdparty/libgpiod-master/autogen.sh
         ../../../thirdparty/libgpiod-master/configure --enable-shared=no --prefix=$(pwd)/../../package
         make install
+        cd ../../.. || exit 1
+
+        # 编译moodycamel库
+        cd thirdparty/concurrentqueue-master || exit 1
+        cmake -B ../../build/thirdparty/concurrentqueue-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        make -C ../../build/thirdparty/concurrentqueue-master install
         cd ../.. || exit 1
 
         echo "Thirdparty build completed."
