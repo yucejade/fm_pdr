@@ -37,7 +37,7 @@ LINK_DIRECTORIES(${CMAKE_INSTALL_PREFIX}/lib/)
 ADD_LIBRARY(${PROJECT_NAME} STATIC ${DIR_MMC56x3_SRCS} ${DIR_TDK40607P_IMU_SRCS} ${DIR_TDK40607P_SRCS} ${DIR_SRCS})
 
 TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC -Wl,-z,relro,-z,now)
-TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC iir_static dlib openblas Fusion GeographicLib)
+TARGET_LINK_LIBRARIES(${PROJECT_NAME} PUBLIC pthread iir_static dlib openblas Fusion GeographicLib)
 
 SET(RUNTIME_DEST bin)
 SET(INCLUDE_DEST include/FmPDR)
@@ -60,5 +60,6 @@ INSTALL(FILES fm_pdr.h
     merge_direction_step.h
     direction_predictor.h
     step_predictor.h
+    exception.h
     DESTINATION ${INCLUDE_DEST})
 INSTALL(FILES conf/config.json DESTINATION ${CONFIG_DEST})

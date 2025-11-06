@@ -73,7 +73,12 @@ void CFmDataFileLoader::preprocess_data( bool is_save )
             Map< const VectorXd >   time_location_map( time_location_vec.data(), time_location_vec.size() );
             Eigen::Index            time_location_size = time_location_map.size();
             if ( m_train_data_size > ( size_t )time_location_size )
-                throw std::invalid_argument( "Train data size exceeds available true location data." );
+            {
+                if (m_train_data_size == (size_t)-1)
+                    m_train_data_size = time_location_size;
+                else
+                    throw std::invalid_argument( "Train data size exceeds available true location data." );
+            }
 
             m_time_location_true = time_location_map;
             m_time_location      = m_time_location_true.head( m_train_data_size ).eval();

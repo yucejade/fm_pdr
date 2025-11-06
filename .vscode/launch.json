@@ -5,14 +5,16 @@
     "version": "0.2.0",
     "configurations": [   
         {
-            "name": "训练模型文件",
+            "name": "C-训练模型文件",
             "request": "launch",
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
-                "-f",
                 "-t",
-                "test_data/test_case0"
+                "test_data/train_data",
+                "-o",
+                "./Trajectory.csv",
+                "-e"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/package/bin",
@@ -22,13 +24,71 @@
             //"preLaunchTask": "编译C++文件",
         },
         {
-            "name": "PDR测试",
+            "name": "C-基于数据文件做PDR测试",
             "request": "launch",
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-d",
-                "sensor_data",
+                "test_data/sensor_data",
+                "-o",
+                "./Trajectory.csv",
+                "-e"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "C-基于实时数据做PDR测试",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/PDRTest",
+            "args": [
+                "-x",
+                "32.11199920",
+                "-y",
+                "118.9528682",
+                "-o",
+                "./Trajectory.csv",
+                "-r",
+                "test_data/output_sensor_data",
+                "-e"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "CPP-训练模型文件",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/PDRTestFromFile",
+            "args": [
+                "-t",
+                "test_data/train_data"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "CPP-PDR测试",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/PDRTestFromFile",
+            "args": [
+                "-d",
+                "test_data/test_case0",
                 "-e"
             ],
             "stopAtEntry": false,

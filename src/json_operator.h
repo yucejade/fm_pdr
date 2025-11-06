@@ -1,5 +1,6 @@
 #pragma once
 #include "fm_pdr.h"
+#include "exception.h"
 #include <rapidjson/document.h>
 #include <rapidjson/filereadstream.h>
 
@@ -13,7 +14,7 @@ public:
         // 1. 打开JSON文件
         FILE* fp = fopen( filename, "r" );
         if ( ! fp )
-            throw std::runtime_error( "Failed to open JSON file: " + std::string( filename ) );
+            throw FileException( FileException::OPEN_FAILED, filename );
 
         // 2. 读取文件内容到缓冲区（rapidjson推荐的方式）
         char                      buffer[ 4096 ];
@@ -26,18 +27,20 @@ public:
 
         // 4. 检查解析错误
         if ( doc.HasParseError() )
-            throw std::runtime_error( "Failed to parse JSON file: " + std::string( filename ) + ", error: " + std::to_string( doc.GetParseError() ) + " at offset " + std::to_string( doc.GetErrorOffset() ) );
+            throw JsonException( JsonException::PARSE_ERROR, "JSON parse error: " + std::to_string( doc.GetParseError() ), doc.GetErrorOffset() );
 
         // 5. 检查JSON根是否为对象
         if ( ! doc.IsObject() )
-            throw std::runtime_error( "JSON root is not an object: " + std::string( filename ) );
+            throw JsonException( JsonException::INVALID_ROOT, "JSON root is not an object: " + std::string( filename ) );
 
         // 6. 读取各个字段（需检查字段存在性和类型）
         auto getIntMember = [ & ]( const char* key ) -> int
         {
             auto it = doc.FindMember( key );
-            if ( it == doc.MemberEnd() || ! it->value.IsInt() )
-                throw std::runtime_error( "Missing or invalid int member: " + std::string( key ) );
+            if ( it == doc.MemberEnd() )
+                throw JsonException( JsonException::MISSING_FIELD, "The necessary field " + std::string( key ) + " is missing.");
+            if ( ! it->value.IsInt() )
+                throw JsonException( JsonException::TYPE_MISMATCH, "The data type of the " + std::string( key ) + "field is incorrect. It should be of int type.");
 
             return it->value.GetInt();
         };
@@ -45,8 +48,10 @@ public:
         auto getStringMember = [ & ]( const char* key ) -> char*
         {
             auto it = doc.FindMember( key );
-            if ( it == doc.MemberEnd() || ! it->value.IsString() )
-                throw std::runtime_error( "Missing or invalid string member: " + std::string( key ) );
+            if ( it == doc.MemberEnd() )
+                throw JsonException( JsonException::MISSING_FIELD, "The necessary field " + std::string( key ) + " is missing.");
+            if ( ! it->value.IsString() )
+                throw JsonException( JsonException::TYPE_MISMATCH, "The data type of the " + std::string( key ) + "field is incorrect. It should be of string type.");
 
             const char* str = it->value.GetString();
             return strdup( str );  // 复制字符串（需手动释放）
@@ -55,8 +60,10 @@ public:
         auto getDoubleMember = [ & ]( const char* key ) -> double
         {
             auto it = doc.FindMember( key );
-            if ( it == doc.MemberEnd() || ! it->value.IsDouble() )
-                throw std::runtime_error( "Missing or invalid double member: " + std::string( key ) );
+            if ( it == doc.MemberEnd() )
+                throw JsonException( JsonException::MISSING_FIELD, "The necessary field " + std::string( key ) + " is missing.");
+            if ( ! it->value.IsDouble() )
+                throw JsonException( JsonException::TYPE_MISMATCH, "The data type of the " + std::string( key ) + "field is incorrect. It should be of double type.");
 
             return it->value.GetDouble();
         };

@@ -125,7 +125,7 @@ StartInfo CFmDirectionPredictor::start( const CFmDataManager& start_data, const 
 
     // 计算前least_point个点平均方向作为计算初始direction
     // 计算与北方向的角度（0°=北，90°=东），角度规范化到 [0, 360) 范围
-    const int       sample_count        = std::min( least_point, ( int )( data_rows - 1 ) );  // 取前least_point段位移
+    const int       sample_count        = std::min( least_point, ( int )data_rows ) - 1;  // 取前least_point段位移
     const VectorXd& magnetometer_data_x = start_data.get_pdr_data( PDR_DATA_FIELD_MAG_X );
     const VectorXd& magnetometer_data_y = start_data.get_pdr_data( PDR_DATA_FIELD_MAG_Y );
 

@@ -93,7 +93,7 @@ build_pdr() {
         echo "Building PDR project..."
         # 创建build目录
         mkdir -p build/src
-        # 进入src目录并编译（此处假设使用cmake，可根据实际情况修改）
+        # 进入src目录并编译
         cd src || exit 1
         cmake -B ../build/src -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../build/package -S .
         make -C ../build/src install
@@ -111,11 +111,20 @@ build_test() {
         echo "Building PDRTest project..."
         # 创建build目录
         mkdir -p build/example
-        # 进入example目录并编译（此处假设使用cmake，可根据实际情况修改）
+        # 进入example目录并编译
         cd example || exit 1
         cmake -B ../build/example -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../build/package -S .
         make -C ../build/example install
-        cd ../.. || exit 1
+        cd .. || exit 1
+        echo "PDRTestFromFile build completed."
+
+        # 创建build目录
+        mkdir -p build/example/plain_c
+        # 进入example/plain_c目录并编译
+        cd example/plain_c || exit 1
+        cmake -B ../../build/example/plain_c -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        make -C ../../build/example/plain_c install
+        cd ../../.. || exit 1
         echo "PDRTest build completed."
     else
         echo "src directory not found, build failed."
