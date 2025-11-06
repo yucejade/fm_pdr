@@ -95,7 +95,7 @@ int main( int argc, char** argv )
             case 'o':
                 output_path_value = optarg;
                 break;
-            case 's':
+            case 'r':
                 raw_data_dir_value = optarg;
                 break;
             case 'h':
@@ -240,14 +240,27 @@ int main( int argc, char** argv )
                 return -1;
             }
 
-            while ( g_is_running )
+            while ( 1 )
             {
-                // 预测行人航迹
-                ret = fm_pdr_predict( pdr_handler, &trajectories, &count );
-                if ( ret < PDR_RESULT_SUCCESS )
+                if (g_is_running)
                 {
-                    fprintf( stderr, "启动行人航迹推算程序时发生错误\n" );
-                    continue;
+                    // 预测行人航迹
+                    ret = fm_pdr_predict( pdr_handler, &trajectories, &count );
+                    if ( ret < PDR_RESULT_SUCCESS )
+                    {
+                        fprintf( stderr, "取得行人航迹推算数据错误\n" );
+                        continue;
+                    }
+                }
+                else
+                {
+                    // 终止行人航迹推算算法
+                    ret = fm_pdr_stop( pdr_handler, &trajectories, &count );
+                    if ( ret < PDR_RESULT_SUCCESS )
+                    {
+                        fprintf( stderr, "取得行人航迹推算数据错误\n" );
+                        continue;
+                    }
                 }
 
                 // 保存推算出的航迹
@@ -264,10 +277,10 @@ int main( int argc, char** argv )
 
                 // 释放计算出的行人轨迹与
                 fm_pdr_free_trajectory( &trajectories, count );
-            }
 
-            // 终止行人航迹推算算法
-            fm_pdr_stop( pdr_handler );
+                if ( ! g_is_running )
+                    break;
+            }
 
             // 释放PDR句柄
             fm_pdr_uninit( &pdr_handler );

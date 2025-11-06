@@ -6,6 +6,7 @@
 #include "fm_device_wrapper.h"
 #include "json_operator.h"
 #include "pdr.h"
+#include <moodycamel/concurrentqueue.h>
 #include <Eigen/src/Core/Matrix.h>
 #include <cerrno>
 #include <cstdlib>
@@ -36,6 +37,7 @@ typedef struct _FmPDRHandler
     std::thread        m_worker;                // 子线程句柄
     Eigen::MatrixXd*   m_train_trajectories;    // TODO:训练轨迹结果
     Eigen::MatrixXd*   m_predict_trajectories;  // TODO:推算轨迹结果
+    moodycamel::ConcurrentQueue<int> queue;     // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
     _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
@@ -343,8 +345,12 @@ static void append_to_csv( const std::string& full_path, const std::vector< std:
 
 static void do_pdr( FmPDRHandler* hdl )
 {
+    int i = 0;
     while ( hdl->m_status == PDR_RUNNING )
     {
+        i++;
+     
+        hdl->queue.enqueue(i);
         // TODO: 采集数据
         // TODO: 根据m_raw_data_path标志，决定是否保存采集数据
 
@@ -564,6 +570,12 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
         }
         else
         {
+            while(true)
+            {
+                int value;
+                hdl->queue.try_dequeue(value);
+                printf("%ddddddddddddddddddddd\n", value);
+            }
             // TODO: 从无锁队列中取得行人航迹数据
             // TODO: 转换为C结构体传出
             ;
@@ -614,7 +626,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
 int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectory** trajectories, unsigned int count )
 {
     // 参数有效性校验
-    if ( ! file_path || ! trajectories || 0 == count )
+    if ( ! file_path || ! trajectories )
         return PDR_RESULT_PARAMETER_ERROR;
 
     int ret = PDR_RESULT_SUCCESS;
@@ -661,7 +673,7 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectory** trajectories, 
 
 void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count )
 {
-    if ( ! trajectories || ! ( *trajectories ) || 0 == count )
+    if ( ! trajectories || ! ( *trajectories ) )
         return;
 
     for ( unsigned int i = 0; i < count; ++i )
@@ -672,26 +684,24 @@ void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count )
     trajectories  = NULL;
 }
 
-void fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int count )
+int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
 {
-    if ( ! handler )
-        return;
-    if ( trajectories && ! count )
-        return;
+    if ( ! handler || ! trajectories || ! count )
+        return PDR_RESULT_PARAMETER_ERROR;
 
     try
     {
         FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( handler );
         if ( hdl->m_status == PDR_STOPPED )
-            return;
+            return PDR_RESULT_CALL_ERROR;
 
         hdl->m_status = PDR_STOPPED;
         if ( hdl->m_worker.joinable() )
             hdl->m_worker.join();
         fm_device_uninit( hdl->m_device_handle );
         
-        // TODO: 读取剩余无锁队列行人航迹
-        // TODO: 释放剩余行人航迹内存
+        // 返回无锁队列中剩余的行人航迹
+        return fm_pdr_predict( handler, trajectories, count );
     }
     catch ( const std::exception& e )
     {
@@ -701,7 +711,7 @@ void fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned in
     {
         std::cerr << "[Unknown Error]" << std::endl;
     }
-    return;
+    return PDR_RESULT_SUCCESS;
 }
 
 void fm_pdr_uninit( PDRHandler* handler )

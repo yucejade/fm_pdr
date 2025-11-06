@@ -177,13 +177,15 @@ int fm_pdr_save_trajectory_data(char* file_path, PDRTrajectory** trajectories, u
 /// @return 无
 void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count );
 
-/// @fn void fm_pdr_stop( PDRHandler* handler )
+/// @fn int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
 /// @brief 停止导航
 /// @param handler [in] PDR句柄
 /// @param trajectories [out] 剩余的行人航迹数据，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的信息
 /// @param count [out] 内部分配的航迹数据块个数
-/// @return 无
-void fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int count );
+/// @return >0: 校正后位置点数量
+///         =0: trajectories传递NULL值并且推算成功
+///         <0: 错误码
+int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count );
 
 /// @fn void fm_pdr_uninit(PDRHandler *handler)
 /// @brief 释放PDR算法资源

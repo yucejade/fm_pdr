@@ -28,6 +28,7 @@ INCLUDE_DIRECTORIES(${PROJECT_NAME}
     ${CMAKE_CURRENT_SOURCE_DIR}/device/TDK40607P/Invn
     ${CMAKE_CURRENT_SOURCE_DIR}/device/MMC56x3
     ${CMAKE_INSTALL_PREFIX}/include
+    ${CMAKE_INSTALL_PREFIX}/include/concurrentqueue
     ${CMAKE_INSTALL_PREFIX}/include/Fusion
     ${CMAKE_INSTALL_PREFIX}/include/eigen3
     )
