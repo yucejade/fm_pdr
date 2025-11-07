@@ -926,7 +926,6 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
             throw FileException( FileException::CREATE_FAILED, dir_path_name.c_str() );
 
         PDRSensorData* sensor_data = &pdr_data->sensor_data;
-        memset( sensor_data, 0x00, sizeof( PDRSensorData ) );
 
         // 处理加速度计数据
         if ( validate_sensor_data( sensor_data->acc_time, sensor_data->acc_x, sensor_data->acc_y, sensor_data->acc_z, sensor_data->length ) )
