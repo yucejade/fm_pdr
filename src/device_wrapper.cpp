@@ -51,10 +51,6 @@ bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, b
     float x, y, z;
     m_sensor_imu.getDataFromRegisters( imu_event );
 
-    // MMC56x3
-    if ( ! m_sensor_mmc.getEvent( x, y, z ) )
-        return false;
-
     sensor_data.sensor_data.acc_time[index] = duration;
     sensor_data.sensor_data.acc_x[index] = imu_event.accel[ 0 ] / 2048.0;
     sensor_data.sensor_data.acc_y[index] = imu_event.accel[ 1 ] / 2048.0;
@@ -63,6 +59,11 @@ bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, b
     sensor_data.sensor_data.gyr_x[index] = imu_event.gyro[ 0 ] / 16.4;
     sensor_data.sensor_data.gyr_y[index] = imu_event.gyro[ 1 ] / 16.4;
     sensor_data.sensor_data.gyr_z[index] = imu_event.gyro[ 2 ] / 16.4;
+
+    // MMC56x3
+    if ( ! m_sensor_mmc.getEvent( x, y, z ) )
+        return false;
+
     sensor_data.sensor_data.mag_time[index] = duration;
     sensor_data.sensor_data.mag_x[index] = x;
     sensor_data.sensor_data.mag_y[index] = y;
