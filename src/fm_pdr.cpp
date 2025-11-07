@@ -6,13 +6,13 @@
 #include "fm_device_wrapper.h"
 #include "json_operator.h"
 #include "pdr.h"
-#include <moodycamel/concurrentqueue.h>
 #include <Eigen/src/Core/Matrix.h>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
 #include <iostream>
+#include <moodycamel/concurrentqueue.h>
 #include <sstream>
 #include <string>
 #include <sys/stat.h>
@@ -27,25 +27,23 @@ typedef enum _FmPDRStatus
 
 typedef struct _FmPDRHandler
 {
-    PDRConfig          m_config;                // 配置
-    CFmPDR             m_pdr;                   // PDR句柄
-    StartInfo          m_si;                    // 起点信息
-    CFmDataManager*    m_data_loader;           // 数据加载器
-    char*              m_sensor_data_path;      // PDR数据文件路径
-    fm_device_handle_t m_device_handle;         // 设备操作句柄
-    int                m_status;                // 0:停止,1:启动
-    std::thread        m_worker;                // 子线程句柄
-    Eigen::MatrixXd*   m_train_trajectories;    // TODO:训练轨迹结果
-    Eigen::MatrixXd*   m_predict_trajectories;  // TODO:推算轨迹结果
-    moodycamel::ConcurrentQueue<int> queue;     // 轨迹队列
+    PDRConfig                                       m_config;            // 配置
+    CFmPDR                                          m_pdr;               // PDR句柄
+    StartInfo                                       m_si;                // 起点信息
+    CFmDataManager*                                 m_data_loader;       // 数据加载器
+    char*                                           m_sensor_data_path;  // PDR数据文件路径
+    fm_device_handle_t                              m_device_handle;     // 设备操作句柄
+    int                                             m_status;            // 0:停止,1:启动
+    std::thread                                     m_worker;            // 子线程句柄
+    moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
     _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
-        : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED ), m_train_trajectories( nullptr ), m_predict_trajectories( nullptr )
+        : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
-    _FmPDRHandler( const PDRConfig& config ) : m_config( config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED ), m_train_trajectories( nullptr ), m_predict_trajectories( nullptr )
+    _FmPDRHandler( const PDRConfig& config ) : m_config( config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
@@ -96,12 +94,12 @@ static void free_trajectory( PDRTrajectory* trajectory ) noexcept
 {
     if ( ! trajectory )
         return;
-    trajectory->time = NULL;
-    trajectory->x = NULL;
-    trajectory->y = NULL;
+    trajectory->time      = NULL;
+    trajectory->x         = NULL;
+    trajectory->y         = NULL;
     trajectory->direction = NULL;
     trajectory->length    = 0;
-    delete static_cast<Eigen::MatrixXd*>(trajectory->ptr);
+    delete static_cast< Eigen::MatrixXd* >( trajectory->ptr );
 }
 
 bool file_exists( const std::string& file_path )
@@ -345,36 +343,84 @@ static void append_to_csv( const std::string& full_path, const std::vector< std:
 
 static void do_pdr( FmPDRHandler* hdl )
 {
-    int i = 0;
+    PDRData    pdr_data;
+    SensorData sensor_data;
+    bool       is_first = true;
+    int        ret;
+
+    memset( &pdr_data, 0x00, sizeof( pdr_data ) );
+    memset( &sensor_data, 0x00, sizeof( sensor_data ) );
+
     while ( hdl->m_status == PDR_RUNNING )
     {
-        i++;
-     
-        hdl->queue.enqueue(i);
-        // TODO: 采集数据
-        // TODO: 根据m_raw_data_path标志，决定是否保存采集数据
+        // 使用固定缓存模式读取传感器数据
+        ret = fm_device_read( hdl->m_device_handle, is_first, hdl->m_config.sample_rate * 4, 1, &sensor_data );
+        if ( ret != 0 )
+        {
+            std::cerr << "Sensor data reading failed." << std::endl;
+            continue;
+        }
 
-        // TODO: 启动导航
-        // hdl->m_data_loader      = new CFmDataBufferLoader( hdl->m_config, 0, *pdr_data );
-        // hdl->m_si               = hdl->m_pdr.start( start_point.x, start_point.y, *hdl->m_data_loader );
+        // 标记不是第一次读取数据，即不需要再次创建缓存
+        is_first = false;
 
-        // TODO: 导航结果写入无锁队列
+        // 转换为PDRData结构
+        pdr_data.sensor_data = sensor_data.sensor_data;
+
+        // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
+        if ( hdl->m_sensor_data_path )
+        {
+            int result = fm_pdr_save_pdr_data( ( char* )hdl->m_sensor_data_path, &pdr_data );
+            if ( result != 0 )
+            {
+                std::cerr << "Failed to save data." << std::endl;
+                continue;
+            }
+        }
+
+        try
+        {
+            // 启动导航
+            CFmDataBufferLoader data_loader( hdl->m_config, 0, pdr_data );
+            hdl->m_si          = hdl->m_pdr.start( hdl->m_si.x0, hdl->m_si.y0, data_loader );
+            Eigen::MatrixXd* t = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
+
+            // 导航结果写入无锁队列
+            hdl->queue.enqueue( t );
+        }
+        catch ( const PDRException& e )
+        {
+            std::cerr << "[PDRError:" << e.code() << "] " << e.what() << std::endl;
+            continue;
+        }
+        catch ( const std::exception& e )
+        {
+            std::cerr << "[StdError] " << e.what() << std::endl;
+            continue;
+        }
+        catch ( ... )
+        {
+            std::cerr << "[Unknown Error]" << std::endl;
+            continue;
+        }
     }
+
+    // 释放设备读取缓存
+    fm_device_free_sensor_data( sensor_data );
 }
 
-int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectory*** trajectories, unsigned int* count )
+int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array )
 {
     if ( ! config_path || ! handler )
         return PDR_RESULT_PARAMETER_ERROR;
-    if ( ! train_file_path && trajectories )
-        return PDR_RESULT_PARAMETER_ERROR;
-    if ( trajectories && ! count )
+    if ( ! train_file_path && trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;
 
-    int              ret                = PDR_RESULT_SUCCESS;
-    FmPDRHandler*    h                  = nullptr;
-    Eigen::MatrixXd* train_trajectories = nullptr;
-    PDRTrajectory**  trajectories_array = nullptr;
+    int                       ret                 = PDR_RESULT_SUCCESS;
+    FmPDRHandler*             h                   = nullptr;
+    Eigen::MatrixXd*          train_trajectories  = nullptr;
+    PDRTrajectory*            trajs               = nullptr;
+    vector< PDRTrajectory* >* trajectories_vector = new std::vector< PDRTrajectory* >();
 
     try
     {
@@ -386,12 +432,14 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
             train_trajectories = new Eigen::MatrixXd();
             h                  = new FmPDRHandler( config, data_loader, *train_trajectories );
 
-            if ( trajectories && count )
+            if ( trajectories_array )
             {
-                trajectories_array = new PDRTrajectory*[ 1 ]();
-                ret                = eigenToPDRTrajectory( *train_trajectories, &trajectories_array[ 0 ] );
-                *trajectories      = trajectories_array;
-                *count             = 1;
+                ret = eigenToPDRTrajectory( *train_trajectories, &trajs );
+                trajectories_vector->push_back( trajs );
+
+                trajectories_array->array = trajectories_vector->data();
+                trajectories_array->count = 1;
+                trajectories_array->ptr   = trajectories_array->array;
             }
         }
         else
@@ -411,11 +459,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
     catch ( const std::exception& e )
     {
@@ -426,11 +470,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
     catch ( ... )
     {
@@ -441,11 +481,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
 
     return ret;
@@ -541,14 +577,15 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path )
     return ret;
 }
 
-int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
+int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 {
-    if ( ! handler || ! trajectories || ! count )
+    if ( ! handler || ! trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;
 
-    int              ret                  = PDR_RESULT_SUCCESS;
-    Eigen::MatrixXd* predict_trajectories = nullptr;
-    PDRTrajectory**  trajectories_array   = nullptr;
+    int                       ret                  = PDR_RESULT_SUCCESS;
+    Eigen::MatrixXd*          predict_trajectories = nullptr;
+    PDRTrajectory*            trajs                = nullptr;
+    vector< PDRTrajectory* >* trajectories_vector  = new std::vector< PDRTrajectory* >();
 
     try
     {
@@ -560,25 +597,32 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
         if ( ! hdl->m_device_handle.handler )
         {
             predict_trajectories = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
-            if ( trajectories && count )
-            {
-                trajectories_array = new PDRTrajectory*[ 1 ]();
-                ret                = eigenToPDRTrajectory( *predict_trajectories, &trajectories_array[ 0 ] );
-                *trajectories      = trajectories_array;
-                *count             = 1;
-            }
+            ret                  = eigenToPDRTrajectory( *predict_trajectories, &trajs );
+            trajectories_vector->push_back( trajs );
+
+            trajectories_array->array = trajectories_vector->data();
+            trajectories_array->count = 1;
+            trajectories_array->ptr   = trajectories_array->array;
         }
         else
         {
-            while(true)
+            while ( true )
             {
-                int value;
-                hdl->queue.try_dequeue(value);
-                printf("%ddddddddddddddddddddd\n", value);
+                bool is_ok;
+
+                // 从无锁队列中取得行人航迹数据
+                is_ok = hdl->queue.try_dequeue( predict_trajectories );
+                if ( ! is_ok )
+                    break;
+
+                ret += eigenToPDRTrajectory( *predict_trajectories, &trajs );
+                trajectories_vector->push_back( trajs );
             }
-            // TODO: 从无锁队列中取得行人航迹数据
-            // TODO: 转换为C结构体传出
-            ;
+
+            // 转换为C结构体传出
+            trajectories_array->array = trajectories_vector->data();
+            trajectories_array->count = trajectories_vector->size();
+            trajectories_array->ptr   = trajectories_vector;
         }
     }
     catch ( const PDRException& e )
@@ -588,11 +632,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
     catch ( const std::exception& e )
     {
@@ -601,11 +641,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
     catch ( ... )
     {
@@ -614,38 +650,36 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned 
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-        {
-            delete[] trajectories_array;
-            if ( trajectories )
-                *trajectories = nullptr;
-        }
+            fm_pdr_free_trajectory(trajectories_array);
     }
     return ret;
 }
 
-int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectory** trajectories, unsigned int count )
+int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array )
 {
     // 参数有效性校验
-    if ( ! file_path || ! trajectories )
+    if ( ! file_path || ! trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;
 
     int ret = PDR_RESULT_SUCCESS;
 
     try
     {
-        for ( unsigned int i = 0; i < count; ++i )
+        for ( unsigned int i = 0; i < trajectories_array->count; ++i )
         {
+            PDRTrajectory* trajectories = trajectories_array->array[i];
+
             // 数据指针完整性校验
-            if ( ! trajectories[ i ]->length || ! trajectories[ i ]->time || ! trajectories[ i ]->x || ! trajectories[ i ]->y || ! trajectories[ i ]->direction )
+            if ( ! trajectories->length || ! trajectories->time || ! trajectories->x || ! trajectories->y || ! trajectories->direction )
                 return PDR_RESULT_EMPTY_ERROR;
 
             // 构建符合append_to_csv要求的列数据结构
-            std::vector< std::pair< std::string, std::vector< double > > > columns = { { "Time (s)", { trajectories[ i ]->time, trajectories[ i ]->time + trajectories[ i ]->length } },
-                                                                                       { "Latitude (°)", { trajectories[ i ]->x, trajectories[ i ]->x + trajectories[ i ]->length } },
-                                                                                       { "Longitude (°)", { trajectories[ i ]->y, trajectories[ i ]->y + trajectories[ i ]->length } },
+            std::vector< std::pair< std::string, std::vector< double > > > columns = { { "Time (s)", { trajectories->time, trajectories->time + trajectories->length } },
+                                                                                       { "Latitude (°)", { trajectories->x, trajectories->x + trajectories->length } },
+                                                                                       { "Longitude (°)", { trajectories->y, trajectories->y + trajectories->length } },
                                                                                        { "Height (m)", {} },
                                                                                        { "Velocity (m/s)", {} },
-                                                                                       { "Direction (°)", { trajectories[ i ]->direction, trajectories[ i ]->direction + trajectories[ i ]->length } },
+                                                                                       { "Direction (°)", { trajectories->direction, trajectories->direction + trajectories->length } },
                                                                                        { "Horizontal Accuracy (m)", {} },
                                                                                        { "Vertical Accuracy (°)", {} } };
 
@@ -671,22 +705,20 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectory** trajectories, 
     return ret;
 }
 
-void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count )
+void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
 {
-    if ( ! trajectories || ! ( *trajectories ) )
+    if ( ! trajectories_array )
         return;
 
-    for ( unsigned int i = 0; i < count; ++i )
-        free_trajectory( ( *trajectories )[ i ] );
+    for ( unsigned int i = 0; i < trajectories_array->count; ++i )
+        free_trajectory( trajectories_array->array[ i ] );
 
-    delete *trajectories;
-    *trajectories = NULL;
-    trajectories  = NULL;
+    delete static_cast< vector< PDRTrajectory* >* >( trajectories_array->ptr );
 }
 
-int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
+int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
 {
-    if ( ! handler || ! trajectories || ! count )
+    if ( ! handler || ! trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;
 
     try
@@ -699,9 +731,9 @@ int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int
         if ( hdl->m_worker.joinable() )
             hdl->m_worker.join();
         fm_device_uninit( hdl->m_device_handle );
-        
+
         // 返回无锁队列中剩余的行人航迹
-        return fm_pdr_predict( handler, trajectories, count );
+        return fm_pdr_predict( handler, trajectories_array );
     }
     catch ( const std::exception& e )
     {

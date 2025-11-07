@@ -131,10 +131,9 @@ int main( int argc, char** argv )
     // printf( "Start-Lot (-y/--start-lat): %f\n", y_value );
     // printf( "Output (-o/--output): %s\n", output_path_value );
 
-    PDRHandler      pdr_handler;
-    PDRTrajectory** trajectories;
-    unsigned int    count;
-    int             ret;
+    PDRHandler         pdr_handler;
+    PDRTrajectoryArray trajectories_array;
+    int                ret;
 
     // 这三个参数只能同时传递一个
     if ( ( train_dir_value != NULL ) + ( dataset_dir_value != NULL ) + ( raw_data_dir_value != NULL ) != 1 )
@@ -146,7 +145,7 @@ int main( int argc, char** argv )
     if ( train_dir_value )
     {
         // 通过训练数据初始化PDR，此时执行目录下会生成模型文件
-        ret = fm_pdr_init_with_file( config_path_value, train_dir_value, &pdr_handler, &trajectories, &count );
+        ret = fm_pdr_init_with_file( config_path_value, train_dir_value, &pdr_handler, &trajectories_array );
         if ( ret < PDR_RESULT_SUCCESS )
         {
             fprintf( stderr, "PDR初始化错误\n" );
@@ -156,10 +155,10 @@ int main( int argc, char** argv )
         // 保存训练数据的航迹
         if ( output_path_value )
         {
-            ret = fm_pdr_save_trajectory_data( output_path_value, trajectories, count );
+            ret = fm_pdr_save_trajectory_data( output_path_value, &trajectories_array );
             if ( ret != PDR_RESULT_SUCCESS )
             {
-                fm_pdr_free_trajectory( &trajectories, count );
+                fm_pdr_free_trajectory( &trajectories_array );
                 fm_pdr_uninit( &pdr_handler );
                 fprintf( stderr, "行人航迹数据保存失败\n" );
                 return -1;
@@ -167,7 +166,7 @@ int main( int argc, char** argv )
         }
 
         // 释放行人轨迹数据(这里的行人轨迹数据不是计算出来的，而是直接传出的真实数据)与PDR句柄
-        fm_pdr_free_trajectory( &trajectories, count );
+        fm_pdr_free_trajectory( &trajectories_array );
         fm_pdr_uninit( &pdr_handler );
     }
     else
@@ -175,7 +174,7 @@ int main( int argc, char** argv )
         if ( dataset_dir_value )
         {
             // 初始化PDR
-            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL, NULL );
+            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fprintf( stderr, "PDR初始化错误\n" );
@@ -192,7 +191,7 @@ int main( int argc, char** argv )
             }
 
             // 预测行人航迹
-            ret = fm_pdr_predict( pdr_handler, &trajectories, &count );
+            ret = fm_pdr_predict( pdr_handler, &trajectories_array );
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fm_pdr_uninit( &pdr_handler );
@@ -203,10 +202,10 @@ int main( int argc, char** argv )
             // 保存推算出的航迹
             if ( output_path_value )
             {
-                ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", trajectories, count );
+                ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", &trajectories_array );
                 if ( ret != PDR_RESULT_SUCCESS )
                 {
-                    fm_pdr_free_trajectory( &trajectories, count );
+                    fm_pdr_free_trajectory( &trajectories_array );
                     fm_pdr_uninit( &pdr_handler );
                     fprintf( stderr, "行人航迹数据保存失败\n" );
                     return -1;
@@ -214,13 +213,13 @@ int main( int argc, char** argv )
             }
 
             // 释放计算出的行人轨迹与PDR句柄
-            fm_pdr_free_trajectory( &trajectories, count );
+            fm_pdr_free_trajectory( &trajectories_array );
             fm_pdr_uninit( &pdr_handler );
         }
         else
         {
             // 初始化PDR句柄
-            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL, NULL );
+            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fprintf( stderr, "PDR初始化错误\n" );
@@ -242,10 +241,10 @@ int main( int argc, char** argv )
 
             while ( 1 )
             {
-                if (g_is_running)
+                if ( g_is_running )
                 {
                     // 预测行人航迹
-                    ret = fm_pdr_predict( pdr_handler, &trajectories, &count );
+                    ret = fm_pdr_predict( pdr_handler, &trajectories_array );
                     if ( ret < PDR_RESULT_SUCCESS )
                     {
                         fprintf( stderr, "取得行人航迹推算数据错误\n" );
@@ -255,7 +254,7 @@ int main( int argc, char** argv )
                 else
                 {
                     // 终止行人航迹推算算法
-                    ret = fm_pdr_stop( pdr_handler, &trajectories, &count );
+                    ret = fm_pdr_stop( pdr_handler, &trajectories_array );
                     if ( ret < PDR_RESULT_SUCCESS )
                     {
                         fprintf( stderr, "取得行人航迹推算数据错误\n" );
@@ -266,17 +265,17 @@ int main( int argc, char** argv )
                 // 保存推算出的航迹
                 if ( output_path_value )
                 {
-                    ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", trajectories, count );
+                    ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", &trajectories_array );
                     if ( ret != PDR_RESULT_SUCCESS )
                     {
-                        fm_pdr_free_trajectory( &trajectories, count );
+                        fm_pdr_free_trajectory( &trajectories_array );
                         fprintf( stderr, "行人航迹数据保存失败\n" );
                         continue;
                     }
                 }
 
                 // 释放计算出的行人轨迹与
-                fm_pdr_free_trajectory( &trajectories, count );
+                fm_pdr_free_trajectory( &trajectories_array );
 
                 if ( ! g_is_running )
                     break;
@@ -289,111 +288,3 @@ int main( int argc, char** argv )
 
     return 0;
 }
-// else if ( dataset_dir_value )
-// {
-//     PDRData pdr_data;
-//     int     ret;
-
-//     // 读取数据文件
-//     ret = fm_pdr_read_pdr_data( dataset_dir_value, &pdr_data );
-//     if ( ret != PDR_RESULT_SUCCESS )
-//     {
-//         fprintf( stderr, "读取PDR测试数据%s失败\n", dataset_dir_value );
-//         return -1;
-//     }
-
-//     // 初始化PDR
-//     ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
-//     if ( ret < PDR_RESULT_SUCCESS )
-//     {
-//         fm_pdr_free_pdr_data( &pdr_data );
-//         fprintf( stderr, "PDR初始化错误\n" );
-//         return -1;
-//     }
-
-//     // 释放计算出的行人轨迹与PDR句柄
-//     fm_pdr_free_trajectory( &trajectory );
-//     fm_pdr_uninit( &pdr_handler );
-
-//     // 释放从数据文件中读取的数据
-//     fm_pdr_free_pdr_data( &pdr_data );
-// }
-// else if ( output_path_value )
-// {
-//     PDRData            pdr_data;
-//     PDRConfig          pdr_config;
-//     SensorData         sensor_data;
-//     fm_device_handle_t device_handle;
-//     int                is_first;
-//     int                ret;
-
-//     // 初始化PDR
-//     ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
-//     if ( ret < PDR_RESULT_SUCCESS )
-//     {
-//         fprintf( stderr, "PDR初始化错误\n" );
-//         return -1;
-//     }
-
-//     // 取得PDR配置
-//     ret = fm_pdr_get_config( pdr_handler, &pdr_config );
-//     if ( ret != PDR_RESULT_SUCCESS )
-//     {
-//         fm_pdr_uninit( &pdr_handler );
-//         fprintf( stderr, "获取PDR配置失败\n" );
-//         return -1;
-//     }
-
-//     // 使用与PDR相同的配置初始化设备
-//     ret = fm_device_init( pdr_config.sample_rate, &device_handle );
-//     if ( ret != 0 )
-//     {
-//         fm_pdr_uninit( &pdr_handler );
-//         fprintf( stderr, "传感器初始化失败\n" );
-//         return -1;
-//     }
-
-//     // 标记第一次读取数据
-//     is_first = 1;
-//     while ( true )
-//     {
-//         // 使用固定缓存模式读取传感器数据
-//         ret = fm_device_read( device_handle, is_first, pdr_config.sample_rate * 2, 1, &sensor_data );
-//         if ( ret != 0 )
-//         {
-//             fprintf( stderr, "读取传感器数据失败\n" );
-//             continue;
-//         }
-
-//         // 标记不是第一次读取数据，即不需要再次创建缓存
-//         is_first = 0;
-
-//         // 处理采集到的传感器数据
-//         // convert_sensor_data_to_pdr_data( &sensor_data, &pdr_data );
-//         // CFmDataBufferLoader data_loader( pdr_config, 0, pdr_data );
-
-//         // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
-//         int result = fm_pdr_save_pdr_data( ( char* )output_path_value, &pdr_data );
-//         if ( result != 0 )
-//         {
-//             fprintf( stderr, "保存数据失败\n" );
-//             continue;
-//         }
-//     }
-
-//     // 释放设备读取缓存和设备句柄
-//     fm_device_free_sensor_data( sensor_data );
-//     fm_device_uninit( device_handle );
-
-//     // 释放计算出的行人轨迹与PDR句柄
-//     fm_pdr_free_trajectory( &trajectory );
-//     fm_pdr_uninit( &pdr_handler );
-// }
-// else
-// {
-//     fprintf( stderr, "\nError: Missing required -t/--train or -d/--dataset or -o/--output option\n\n" );
-//     show_help( argv[ 0 ] );
-// }
-
-// return 0;
-// }

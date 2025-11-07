@@ -32,6 +32,8 @@ typedef struct _PDRPoint
     double y;  ///< Y轴维度
 } PDRPoint;
 
+/// @struct PDRData
+/// @brief 行人航迹推算(PDR)使用的传感器数据
 typedef struct _PDRSensorData
 {
     double* acc_time;   ///< 时间戳（单位：秒）
@@ -54,6 +56,8 @@ typedef struct _PDRSensorData
     unsigned long length;  ///< 数组有效长度
 } PDRSensorData;
 
+/// @struct PDRData
+/// @brief 行人航迹推算(PDR)使用的真实(GPS)数据
 typedef struct _PDRTrueData
 {
     double* time_location;        ///< 定位时间戳（单位：秒）
@@ -68,6 +72,8 @@ typedef struct _PDRTrueData
     unsigned long length;  ///< 数组有效长度
 } PDRTrueData;
 
+/// @struct PDRData
+/// @brief 行人航迹推算(PDR)的传感器数据汇总
 typedef struct _PDRData
 {
     PDRSensorData sensor_data;  ///< 传感器数据
@@ -75,7 +81,7 @@ typedef struct _PDRData
 } PDRData;
 
 /// @struct PDRTrajectory
-/// @brief 行人航迹推算(PDR)的定位数据结构
+/// @brief 行人航迹推算(PDR)的定位数据
 typedef struct _PDRTrajectory
 {
     double*       time;       ///< 时间戳（单位：秒）
@@ -85,6 +91,15 @@ typedef struct _PDRTrajectory
     unsigned long length;     ///< 数组长度
     void*         ptr;        ///< 对象指针
 } PDRTrajectory;
+
+/// @struct PDRTrajectoryArray
+/// @brief 行人航迹推算(PDR)的定位数据数组
+typedef struct _PDRTrajectoryArray
+{
+    PDRTrajectory** array;  ///< 数组指针
+    int             count;  ///< 数组长度
+    void*           ptr;    ///< 对象指针
+} PDRTrajectoryArray;
 
 /// @enum PDRResult
 /// @brief PDR接口返回值定义
@@ -117,25 +132,24 @@ typedef enum _PDRResult
 /// @details 该类型为PDR算法实例的不透明指针
 typedef void* PDRHandler;
 
-/// @fn int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectory*** trajectories, unsigned int* count )
+/// @fn int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 初始化PDR算法
 /// @param config_path [in] 配置文件路径
 /// @param train_file_path [in] PDR训练数据路径，传递NULL表示不进行训练，只进行预测（使用配置项中的模型路径）和读取配置
 /// @param handler [out] PDR句柄
-/// @param trajectories [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的信息
-/// @param count [out] 内部分配的航迹数据块个数
+/// @param trajectories_array [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return >0: 训练生成位置点数量
 ///         =0: trajectories传递NULL值并且初始化成功
 ///         <0: 错误码
-int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectory*** trajectories, unsigned int* count );
+int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array );
 
-//TODO:删除这个函数
+// TODO:删除这个函数
 /// @fn int fm_pdr_get_config(PDRHandler* handler, PDRConfig *config)
 /// @brief 开始导航
 /// @param handler [in] PDR句柄
 /// @param config [out] 传感器数据，用于确定初始行进方向，建议设置3秒以上传感器数据
 /// @return 无
-int fm_pdr_get_config(PDRHandler handler, PDRConfig *config);
+int fm_pdr_get_config( PDRHandler handler, PDRConfig* config );
 
 /// @fn void fm_pdr_start( PDRHandler* handler, PDRPoint start_point )
 /// @brief 基于传感器数据，开始导航
@@ -150,42 +164,38 @@ int fm_pdr_start( PDRHandler handler, PDRPoint start_point, char* raw_data_path 
 /// @param handler [in] PDR句柄
 /// @param sensor_file_path [in] 记录行进数据目录的路径
 /// @return 无
-int fm_pdr_start_with_file( PDRHandler handler, char *sensor_file_path );
+int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path );
 
-/// @fn int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
+/// @fn int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 基于传感器数据，执行行人航迹推算预测
 /// @param handler [in] PDR句柄
-/// @param trajectories [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的信息
-/// @param count [out] 内部分配的航迹数据块个数
+/// @param trajectories_array [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
-int fm_pdr_predict( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count );
+int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray *trajectories_array );
 
-/// @fn int fm_pdr_save_trajectory_data(char* file_path, PDRTrajectory** trajectories, unsigned int count)
+/// @fn int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array )
 /// @brief 保存行人航迹数据，函数可以重复调用，每次追加写入数据
 /// @param file_path [in] 保存文件路径
-/// @param trajectories [in] 航迹数据块列表的首地址指针
-/// @param count [in] 航迹数据块个数
+/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return 0: 保存成功；!=0: 保存失败
-int fm_pdr_save_trajectory_data(char* file_path, PDRTrajectory** trajectories, unsigned int count);
+int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array );
 
-/// @fn void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count )
+/// @fn void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
 /// @brief 释放航迹数据
-/// @param trajectory [in] 指向航迹数据块列表的首地址指针
-/// @param count [in] 航迹数据块个数
+/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return 无
-void fm_pdr_free_trajectory( PDRTrajectory*** trajectories, unsigned int count );
+void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array );
 
-/// @fn int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count )
+/// @fn int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 停止导航
 /// @param handler [in] PDR句柄
-/// @param trajectories [out] 剩余的行人航迹数据，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的信息
-/// @param count [out] 内部分配的航迹数据块个数
+/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
-int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int* count );
+int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array );
 
 /// @fn void fm_pdr_uninit(PDRHandler *handler)
 /// @brief 释放PDR算法资源
@@ -193,7 +203,7 @@ int fm_pdr_stop( PDRHandler handler, PDRTrajectory*** trajectories, unsigned int
 /// @return 无
 void fm_pdr_uninit( PDRHandler* handler );
 
-//TODO:改为私有函数
+// TODO:改为私有函数
 /// @fn int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data )
 /// @brief 读取dir_path目录传感器数据到PDRData结构体中
 /// @param dir_path [in] 保存文件路径
@@ -201,21 +211,20 @@ void fm_pdr_uninit( PDRHandler* handler );
 /// @return 0: 读取成功；!=0: 读取失败
 int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data );
 
-//TODO:改为私有函数
+// TODO:改为私有函数
 /// @fn void fm_pdr_free_pdr_data( PDRData* pdr_data )
 /// @brief 释放PDRData结构体中的数据
 /// @param pdr_data [in] PDR数据指针
 /// @return 无
 void fm_pdr_free_pdr_data( PDRData* pdr_data );
 
-//TODO:改为私有函数
+// TODO:改为私有函数
 /// @fn int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
 /// @brief 保存传感器数据，函数可以重复调用，每次追加写入数据
 /// @param dir_path [in] 保存文件路径
 /// @param pdr_data [in] PDR数据指针
 /// @return 0: 保存成功；!=0: 保存失败
 int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data );
-
 
 #ifdef __cplusplus
 }
