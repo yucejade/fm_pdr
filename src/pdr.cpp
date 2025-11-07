@@ -132,11 +132,14 @@ MatrixXd CFmPDR::linear_interpolation( const VectorXd& target_times, const Matri
 MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data )
 {
     Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
-    MatrixXd        t;
+    if ( 0 == trajectory.rows() )
+        return Eigen::MatrixXd();
 
     // for ( Eigen::Index i = 0; i < trajectory.rows(); i++ )
     //     cout << "time:" << trajectory( i, 0 ) << ", x:" << trajectory( i, 1 ) << ", y:" << trajectory( i, 2 ) << ", direction:" << trajectory( i, 3 ) << endl;
 
+    MatrixXd t;
+    
     if ( process_data.have_location_true() )
     {
         size_t          true_data_size = process_data.get_true_data_size();

@@ -38,8 +38,7 @@ typedef struct _FmPDRHandler
     moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
-    _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
-        : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position ) : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
@@ -386,7 +385,8 @@ static void do_pdr( FmPDRHandler* hdl )
             Eigen::MatrixXd* t = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
             // 导航结果写入无锁队列
-            hdl->queue.enqueue( t );
+            if ( t->rows() > 0 )
+                hdl->queue.enqueue( t );
         }
         catch ( const PDRException& e )
         {
@@ -459,7 +459,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
     catch ( const std::exception& e )
     {
@@ -470,7 +470,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
     catch ( ... )
     {
@@ -481,7 +481,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
         if ( train_trajectories )
             delete train_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
 
     return ret;
@@ -632,7 +632,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
     catch ( const std::exception& e )
     {
@@ -641,7 +641,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
     catch ( ... )
     {
@@ -650,12 +650,12 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         if ( predict_trajectories )
             delete predict_trajectories;
         if ( trajectories_array )
-            fm_pdr_free_trajectory(trajectories_array);
+            fm_pdr_free_trajectory( trajectories_array );
     }
     return ret;
 }
 
-int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array )
+int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectories_array )
 {
     // 参数有效性校验
     if ( ! file_path || ! trajectories_array )
@@ -667,7 +667,7 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectori
     {
         for ( unsigned int i = 0; i < trajectories_array->count; ++i )
         {
-            PDRTrajectory* trajectories = trajectories_array->array[i];
+            PDRTrajectory* trajectories = trajectories_array->array[ i ];
 
             // 数据指针完整性校验
             if ( ! trajectories->length || ! trajectories->time || ! trajectories->x || ! trajectories->y || ! trajectories->direction )
@@ -716,7 +716,7 @@ void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
     delete static_cast< vector< PDRTrajectory* >* >( trajectories_array->ptr );
 }
 
-int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
+int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 {
     if ( ! handler || ! trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;

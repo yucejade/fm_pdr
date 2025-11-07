@@ -35,85 +35,37 @@ int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, i
 
     data->real_length = static_cast< unsigned long >( count > 0 ? count : 1 );
     if ( ! data->sensor_data.acc_time )
-    {
-        data->sensor_data.acc_time = new double[ data->real_length ];
-        memset( data->sensor_data.acc_time, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.acc_time = new double[ data->real_length ]();
     if ( ! data->sensor_data.acc_x )
-    {
-        data->sensor_data.acc_x = new double[ data->real_length ];
-        memset( data->sensor_data.acc_x, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.acc_x = new double[ data->real_length ]();
     if ( ! data->sensor_data.acc_y )
-    {
-        data->sensor_data.acc_y = new double[ data->real_length ];
-        memset( data->sensor_data.acc_y, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.acc_y = new double[ data->real_length ]();
     if ( ! data->sensor_data.acc_z )
-    {
-        data->sensor_data.acc_z = new double[ data->real_length ];
-        memset( data->sensor_data.acc_z, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.acc_z = new double[ data->real_length ]();
     if ( ! data->sensor_data.lacc_time )
-    {
-        data->sensor_data.lacc_time = new double[ data->real_length ];
-        memset( data->sensor_data.lacc_time, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.lacc_time = new double[ data->real_length ]();
     if ( ! data->sensor_data.lacc_x )
-    {
-        data->sensor_data.lacc_x = new double[ data->real_length ];
-        memset( data->sensor_data.lacc_x, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.lacc_x = new double[ data->real_length ]();
     if ( ! data->sensor_data.lacc_y )
-    {
-        data->sensor_data.lacc_y = new double[ data->real_length ];
-        memset( data->sensor_data.lacc_y, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.lacc_y = new double[ data->real_length ]();
     if ( ! data->sensor_data.lacc_z )
-    {
-        data->sensor_data.lacc_z = new double[ data->real_length ];
-        memset( data->sensor_data.lacc_z, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.lacc_z = new double[ data->real_length ]();
     if ( ! data->sensor_data.gyr_time )
-    {
-        data->sensor_data.gyr_time = new double[ data->real_length ];
-        memset( data->sensor_data.gyr_time, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.gyr_time = new double[ data->real_length ]();
     if ( ! data->sensor_data.gyr_x )
-    {
-        data->sensor_data.gyr_x = new double[ data->real_length ];
-        memset( data->sensor_data.gyr_x, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.gyr_x = new double[ data->real_length ]();
     if ( ! data->sensor_data.gyr_y )
-    {
-        data->sensor_data.gyr_y = new double[ data->real_length ];
-        memset( data->sensor_data.gyr_y, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.gyr_y = new double[ data->real_length ]();
     if ( ! data->sensor_data.gyr_z )
-    {
-        data->sensor_data.gyr_z = new double[ data->real_length ];
-        memset( data->sensor_data.gyr_z, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.gyr_z = new double[ data->real_length ]();
     if ( ! data->sensor_data.mag_time )
-    {
-        data->sensor_data.mag_time = new double[ data->real_length ];
-        memset( data->sensor_data.mag_time, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.mag_time = new double[ data->real_length ]();
     if ( ! data->sensor_data.mag_x )
-    {
-        data->sensor_data.mag_x = new double[ data->real_length ];
-        memset( data->sensor_data.mag_x, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.mag_x = new double[ data->real_length ]();
     if ( ! data->sensor_data.mag_y )
-    {
-        data->sensor_data.mag_y = new double[ data->real_length ];
-        memset( data->sensor_data.mag_y, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.mag_y = new double[ data->real_length ]();
     if ( ! data->sensor_data.mag_z )
-    {
-        data->sensor_data.mag_z = new double[ data->real_length ];
-        memset( data->sensor_data.mag_z, 0x00, sizeof( double ) * data->real_length );
-    }
+        data->sensor_data.mag_z = new double[ data->real_length ]();
 
     CFmDeviceWrapper* wrapper = static_cast< CFmDeviceWrapper* >( device_handle.handler );
     for (unsigned long i = 0; i < data->real_length; ++i)

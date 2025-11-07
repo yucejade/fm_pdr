@@ -55,7 +55,7 @@
                 "-o",
                 "./Trajectory.csv",
                 "-r",
-                "test_data/output_sensor_data",
+                "./output_sensor_data",
                 "-e"
             ],
             "stopAtEntry": false,
