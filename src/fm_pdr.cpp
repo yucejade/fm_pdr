@@ -668,7 +668,9 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
         for ( unsigned int i = 0; i < trajectories_array->count; ++i )
         {
             PDRTrajectory* trajectories = trajectories_array->array[ i ];
-
+            if ( ! trajectories )
+                return PDR_RESULT_NONE;
+            
             // 数据指针完整性校验
             if ( ! trajectories->length || ! trajectories->time || ! trajectories->x || ! trajectories->y || ! trajectories->direction )
                 return PDR_RESULT_EMPTY_ERROR;

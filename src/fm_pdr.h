@@ -118,12 +118,13 @@ typedef enum _PDRResult
     PDR_RESULT_WRITE_FAILED        = -1002,  ///< 写文件失败
     PDR_RESULT_OPEN_FAILED         = -1001,  ///< 打开文件失败
     PDR_RESULT_CREATE_FAILED       = -1000,  ///< 创建文件失败
-    PDR_RESULT_UNKNOWN             = -6,     ///< 未知错误
-    PDR_RESULT_GENERAL_ERROR       = -5,     ///< 系统错误，如：crt错误
-    PDR_RESULT_DEVICE_INIT_ERROR   = -4,     ///< 设备驱动初始化错误
-    PDR_RESULT_CALL_ERROR          = -3,     ///< 错误的函数调用
-    PDR_RESULT_ALREADY_RUNNING     = -2,     ///< PDR已经启动
-    PDR_RESULT_PARAMETER_ERROR     = -1,     ///< 参数错误
+    PDR_RESULT_UNKNOWN             = -7,     ///< 未知错误
+    PDR_RESULT_GENERAL_ERROR       = -6,     ///< 系统错误，如：crt错误
+    PDR_RESULT_DEVICE_INIT_ERROR   = -5,     ///< 设备驱动初始化错误
+    PDR_RESULT_CALL_ERROR          = -4,     ///< 错误的函数调用
+    PDR_RESULT_ALREADY_RUNNING     = -3,     ///< PDR已经启动
+    PDR_RESULT_PARAMETER_ERROR     = -2,     ///< 参数错误
+    PDR_RESULT_NONE                = -1,     ///< 未检测到行进
     PDR_RESULT_SUCCESS             = 0,      ///< 成功
 } PDRResult;
 
