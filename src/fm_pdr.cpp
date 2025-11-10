@@ -353,7 +353,7 @@ static void do_pdr( FmPDRHandler* hdl )
     while ( hdl->m_status == PDR_RUNNING )
     {
         // 使用固定缓存模式读取传感器数据
-        ret = fm_device_read( hdl->m_device_handle, is_first, hdl->m_config.sample_rate * 4, 1, &sensor_data );
+        ret = fm_device_read( hdl->m_device_handle, is_first, hdl->m_config.sample_rate * hdl->m_config.pdr_duration, 1, &sensor_data );
         if ( ret != 0 )
         {
             std::cerr << "Sensor data reading failed." << std::endl;
@@ -498,9 +498,9 @@ int fm_pdr_get_config( PDRHandler handler, PDRConfig* config )
     return PDR_RESULT_SUCCESS;
 }
 
-int fm_pdr_start( PDRHandler handler, PDRPoint start_point, char* raw_data_path )
+int fm_pdr_start( PDRHandler handler, PDRPoint *start_point, char* raw_data_path )
 {
-    if ( ! handler )
+    if ( ! handler || ! start_point )
         return PDR_RESULT_PARAMETER_ERROR;
 
     int ret = PDR_RESULT_SUCCESS;
@@ -511,8 +511,8 @@ int fm_pdr_start( PDRHandler handler, PDRPoint start_point, char* raw_data_path 
         if ( hdl->m_status )
             return PDR_RESULT_ALREADY_RUNNING;
 
-        hdl->m_si.x0            = start_point.x;
-        hdl->m_si.y0            = start_point.y;
+        hdl->m_si.x0            = start_point->x;
+        hdl->m_si.y0            = start_point->y;
         hdl->m_sensor_data_path = strdup( raw_data_path );
         hdl->m_status           = PDR_RUNNING;
 

@@ -1,5 +1,6 @@
 {
   "sample_rate": 50,
+  "pdr_duration": 4,
   "model_name": "Linear",
   "model_file_name": "model.dat",
   "clean_start": 4,

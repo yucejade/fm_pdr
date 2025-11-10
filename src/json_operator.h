@@ -70,6 +70,7 @@ public:
 
         // 映射字段到结构体
         config.sample_rate          = getIntMember( "sample_rate" );
+        config.pdr_duration         = getIntMember( "pdr_duration" );
         config.model_name           = getStringMember( "model_name" );
         config.model_file_name      = getStringMember( "model_file_name" );
         config.clean_start          = getIntMember( "clean_start" );

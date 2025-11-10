@@ -240,7 +240,7 @@ int main( int argc, char** argv )
             start_point.x = x_value;
             start_point.y = y_value;
 
-            ret = fm_pdr_start( pdr_handler, start_point, raw_data_dir_value );
+            ret = fm_pdr_start( pdr_handler, &start_point, raw_data_dir_value );
             if ( ret != PDR_RESULT_SUCCESS )
             {
                 fm_pdr_uninit( &pdr_handler );
