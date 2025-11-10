@@ -1,8 +1,13 @@
+#define _POSIX_C_SOURCE 200809L
+#define _XOPEN_SOURCE 700
+
 #include "fm_pdr.h"
 #include <getopt.h>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
+#include <stdatomic.h>
 
 // 全局参数存储
 int   evaluation_value   = 0;
@@ -28,7 +33,7 @@ static struct option long_options[] = {
     { 0, 0, 0, 0 }  // 结束标记
 };
 
-static int g_is_running = 1;
+static volatile sig_atomic_t g_is_running = 1;
 
 void show_help( char* prog_name )
 {
@@ -60,9 +65,13 @@ void sigterm_handler( int signum )
 
 int main( int argc, char** argv )
 {
-    signal( SIGTERM, sigterm_handler );
-    signal( SIGHUP, sigterm_handler );
-    signal( SIGINT, sigterm_handler );
+    struct sigaction sa;
+    sa.sa_handler = sigterm_handler;
+    sigemptyset(&sa.sa_mask);
+    sa.sa_flags = SA_RESTART;
+    sigaction(SIGTERM, &sa, NULL);
+    sigaction(SIGINT, &sa, NULL);
+    sigaction(SIGHUP, &sa, NULL);
 
     int opt;
     int option_index = 0;
@@ -239,6 +248,7 @@ int main( int argc, char** argv )
                 return -1;
             }
 
+            int quit = 0;
             while ( 1 )
             {
                 if ( g_is_running )
@@ -260,6 +270,8 @@ int main( int argc, char** argv )
                         fprintf( stderr, "取得行人航迹推算数据错误\n" );
                         continue;
                     }
+
+                    quit = 1;
                 }
 
                 // 保存推算出的航迹
@@ -277,8 +289,10 @@ int main( int argc, char** argv )
                 // 释放计算出的行人轨迹与
                 fm_pdr_free_trajectory( &trajectories_array );
 
-                if ( ! g_is_running )
+                if ( quit )
                     break;
+
+                sleep( 4 );
             }
 
             // 释放PDR句柄

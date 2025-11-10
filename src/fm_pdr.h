@@ -97,7 +97,7 @@ typedef struct _PDRTrajectory
 typedef struct _PDRTrajectoryArray
 {
     PDRTrajectory** array;  ///< 数组指针
-    int             count;  ///< 数组长度
+    unsigned int    count;  ///< 数组长度
     void*           ptr;    ///< 对象指针
 } PDRTrajectoryArray;
 
@@ -142,7 +142,7 @@ typedef void* PDRHandler;
 /// @return >0: 训练生成位置点数量
 ///         =0: trajectories传递NULL值并且初始化成功
 ///         <0: 错误码
-int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array );
+int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array );
 
 // TODO:删除这个函数
 /// @fn int fm_pdr_get_config(PDRHandler* handler, PDRConfig *config)
@@ -174,14 +174,14 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path );
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
-int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray *trajectories_array );
+int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array );
 
 /// @fn int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array )
 /// @brief 保存行人航迹数据，函数可以重复调用，每次追加写入数据
 /// @param file_path [in] 保存文件路径
 /// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return 0: 保存成功；!=0: 保存失败
-int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array );
+int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectories_array );
 
 /// @fn void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
 /// @brief 释放航迹数据
@@ -196,7 +196,7 @@ void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array );
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
-int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array );
+int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray* trajectories_array );
 
 /// @fn void fm_pdr_uninit(PDRHandler *handler)
 /// @brief 释放PDR算法资源

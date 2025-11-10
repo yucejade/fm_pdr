@@ -590,8 +590,9 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
     try
     {
         FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( handler );
-        if ( hdl->m_status != PDR_RUNNING )
-            return PDR_RESULT_CALL_ERROR;
+        // 停止时需要取残留数据
+        // if ( hdl->m_status != PDR_RUNNING )
+        //     return PDR_RESULT_CALL_ERROR;
 
         // 根据是否创建设备句柄判断PDR模式
         if ( ! hdl->m_device_handle.handler )
