@@ -49,12 +49,14 @@ bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, b
     // TDK42607
     inv_imu_sensor_event_t imu_event;
     float x, y, z;
+    const double gravity = 9.8035f;
+
     m_sensor_imu.getDataFromRegisters( imu_event );
 
     sensor_data.sensor_data.acc_time[index] = duration;
-    sensor_data.sensor_data.acc_x[index] = imu_event.accel[ 0 ] / 2048.0;
-    sensor_data.sensor_data.acc_y[index] = imu_event.accel[ 1 ] / 2048.0;
-    sensor_data.sensor_data.acc_z[index] = imu_event.accel[ 2 ] / 2048.0;
+    sensor_data.sensor_data.acc_x[index] = gravity * imu_event.accel[ 0 ] / 2048.0;
+    sensor_data.sensor_data.acc_y[index] = gravity * imu_event.accel[ 1 ] / 2048.0;
+    sensor_data.sensor_data.acc_z[index] = gravity * imu_event.accel[ 2 ] / 2048.0;
     sensor_data.sensor_data.gyr_time[index] = duration;
     sensor_data.sensor_data.gyr_x[index] = imu_event.gyro[ 0 ] / 16.4;
     sensor_data.sensor_data.gyr_y[index] = imu_event.gyro[ 1 ] / 16.4;
