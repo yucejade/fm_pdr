@@ -104,6 +104,10 @@ build_pdr() {
         cmake -B ../build/src -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../build/package -S .
         make -C ../build/src install
         cd .. || exit 1
+
+	doxygen Doxyfile
+	mv docs build/package
+
         echo "PDR build completed."
     else
         echo "src directory not found, build failed."
