@@ -80,9 +80,6 @@ int main( int argc, char* argv[] )
             bool                       is_first = true;
             int                        count    = 0;
             CFmMagnetometerCalibration calib( calibration_path );
-            double                     mag_x;
-            double                     mag_y;
-            double                     mag_z;
             int                        ret = PDR_RESULT_SUCCESS;
 
             ret = fm_device_init( 50, &device_handler );
@@ -91,10 +88,12 @@ int main( int argc, char* argv[] )
 
             memset( &sensor_data, 0x00, sizeof( sensor_data ) );
 
-            while ( ++count > 30 )
+            while ( ++count <= 30 )
             {
+                const int length = 50 * 2;
+
                 // 使用固定缓存模式读取传感器数据
-                ret = fm_device_read( device_handler, is_first, 50 * 2, 1, &sensor_data );
+                ret = fm_device_read( device_handler, is_first, length, 1, &sensor_data );
                 if ( ret != 0 )
                 {
                     std::cerr << "Sensor data reading failed." << std::endl;
@@ -104,9 +103,24 @@ int main( int argc, char* argv[] )
                 // 标记不是第一次读取数据，即不需要再次创建缓存
                 is_first = false;
 
-                std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << ")" << std::endl;
-                calib.Calibration( mag_x, mag_y, mag_z );
-                std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << ")" << std::endl;
+                for (int i = 0; i < length; ++i)
+                {
+                    double mag_x = sensor_data.sensor_data.mag_x[i];
+                    double mag_y = sensor_data.sensor_data.mag_y[i];
+                    double mag_z = sensor_data.sensor_data.mag_z[i];
+
+                    // 计算模长
+                    double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+                    std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
+
+                    calib.Calibration( mag_x, mag_y, mag_z );
+
+                    mag_x *= sensor_data.sensor_data.mag_x[i];
+                    mag_y *= sensor_data.sensor_data.mag_y[i];
+                    mag_z *= sensor_data.sensor_data.mag_z[i];
+                    double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+                    std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+                }
             }
 
             // 释放设备读取缓存
