@@ -12,7 +12,10 @@ CFmDeviceWrapper::CFmDeviceWrapper( int sample_rate ) : m_start_time_ms( 0 )
     // Initializing the MMC56x3
     if ( ! m_sensor_mmc.begin( deviceAddress_mmc, i2cDevice.c_str() ) )
         throw std::invalid_argument( "Failed to initialize MMC56x3 sensor" );
+    m_sensor_mmc.setDataRate( sample_rate );
+    m_sensor_mmc.setContinuousMode( true );
 
+    
     // Initializing the ICM42670
     if ( 0 != m_sensor_imu.begin( false, deviceAddress_imu, i2cDevice.c_str() ) )
         throw std::invalid_argument( "Failed to initialize ICM42670 sensor" );
@@ -66,6 +69,10 @@ bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, b
     sensor_data.sensor_data.mag_x[ index ]    = x;
     sensor_data.sensor_data.mag_y[ index ]    = y;
     sensor_data.sensor_data.mag_z[ index ]    = z;
+
+    // // 计算模长
+    // double magnitude = std::sqrt(x * x + y * y + z * z);
+    // std::cout << "Magnetometer (uT): X=" << x << " Y=" << y << " Z=" << z << " Magnitude=" << magnitude << std::endl;
 
     return true;
 }

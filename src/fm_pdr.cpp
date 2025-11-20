@@ -551,10 +551,12 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path )
     {
         FmPDRHandler* hdl       = reinterpret_cast< FmPDRHandler* >( handler );
         hdl->m_data_loader      = new CFmDataFileLoader( hdl->m_config, 0, sensor_file_path );
-        VectorXd pos_x          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LATITUDE );
-        VectorXd pos_y          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LONGITUDE );
-        double   x0             = pos_x[ 0 ];
-        double   y0             = pos_y[ 0 ];
+        // VectorXd pos_x          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LATITUDE );
+        // VectorXd pos_y          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LONGITUDE );
+        // double   x0             = pos_x[ 0 ];
+        // double   y0             = pos_y[ 0 ];
+        double   x0             = 32.11199920;
+        double   y0             = 118.9528682;
         hdl->m_si               = hdl->m_pdr.start( x0, y0, *hdl->m_data_loader );
         hdl->m_sensor_data_path = strdup( sensor_file_path );
         hdl->m_status           = PDR_RUNNING;
