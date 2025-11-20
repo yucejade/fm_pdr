@@ -66,3 +66,4 @@ INSTALL(FILES fm_pdr.h
     magnetometer-calibration.h
     DESTINATION ${INCLUDE_DEST})
 INSTALL(FILES conf/config.json DESTINATION ${CONFIG_DEST})
+INSTALL(FILES conf/mag_calibration.json DESTINATION ${CONFIG_DEST})
