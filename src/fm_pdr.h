@@ -106,27 +106,30 @@ typedef struct _PDRTrajectoryArray
 /// @brief PDR接口返回值定义
 typedef enum _PDRResult
 {
-    PDR_RESULT_ALLOC_FAILED        = -4000,  ///< 内存分配错误
-    PDR_RESULT_COLUMN_INCONSISTENT = -3001,  ///< 列不一致
-    PDR_RESULT_EMPTY_ERROR         = -3000,  ///< 数据为空
-    PDR_RESULT_TYPE_MISMATCH       = -2003,  ///< JSON字段类型错误
-    PDR_RESULT_MISSING_FIELD       = -2002,  ///< JSON必要字段缺失
-    PDR_RESULT_INVALID_ROOT        = -2001,  ///< JSON根对象错误，必须为"{}"包含的JSON对象
-    PDR_RESULT_PARSE_ERROR         = -2000,  ///< JSON解析错误，如：非JSON格式
-    PDR_RESULT_NOT_DIRECTORY       = -1005,  ///< 指定目录文件不是目录
-    PDR_RESULT_DIR_NOT_EXIST       = -1004,  ///< 目录不存在
-    PDR_RESULT_READ_FAILED         = -1003,  ///< 读文件失败
-    PDR_RESULT_WRITE_FAILED        = -1002,  ///< 写文件失败
-    PDR_RESULT_OPEN_FAILED         = -1001,  ///< 打开文件失败
-    PDR_RESULT_CREATE_FAILED       = -1000,  ///< 创建文件失败
-    PDR_RESULT_UNKNOWN             = -7,     ///< 未知错误
-    PDR_RESULT_GENERAL_ERROR       = -6,     ///< 系统错误，如：crt错误
-    PDR_RESULT_DEVICE_INIT_ERROR   = -5,     ///< 设备驱动初始化错误
-    PDR_RESULT_CALL_ERROR          = -4,     ///< 错误的函数调用
-    PDR_RESULT_ALREADY_RUNNING     = -3,     ///< PDR已经启动
-    PDR_RESULT_PARAMETER_ERROR     = -2,     ///< 参数错误
-    PDR_RESULT_NONE                = -1,     ///< 未检测到行进
-    PDR_RESULT_SUCCESS             = 0,      ///< 成功
+    PDR_RESULT_ALLOC_FAILED           = -5000,  ///< 内存分配错误
+    PDR_RESULT_CALIBRATION_LOAD_ERROR = -4002,  ///< 加载校准文件失败
+    PDR_RESULT_CALIBRATION_SAVE_ERROR = -4001,  ///< 保存校准文件失败
+    PDR_RESULT_CALIBRATION_ERROR      = -4000,  ///< 传感器校准错误
+    PDR_RESULT_COLUMN_INCONSISTENT    = -3001,  ///< 列不一致
+    PDR_RESULT_EMPTY_ERROR            = -3000,  ///< 数据为空
+    PDR_RESULT_TYPE_MISMATCH          = -2003,  ///< JSON字段类型错误
+    PDR_RESULT_MISSING_FIELD          = -2002,  ///< JSON必要字段缺失
+    PDR_RESULT_INVALID_ROOT           = -2001,  ///< JSON根对象错误，必须为"{}"包含的JSON对象
+    PDR_RESULT_PARSE_ERROR            = -2000,  ///< JSON解析错误，如：非JSON格式
+    PDR_RESULT_NOT_DIRECTORY          = -1005,  ///< 指定目录文件不是目录
+    PDR_RESULT_DIR_NOT_EXIST          = -1004,  ///< 目录不存在
+    PDR_RESULT_READ_FAILED            = -1003,  ///< 读文件失败
+    PDR_RESULT_WRITE_FAILED           = -1002,  ///< 写文件失败
+    PDR_RESULT_OPEN_FAILED            = -1001,  ///< 打开文件失败
+    PDR_RESULT_CREATE_FAILED          = -1000,  ///< 创建文件失败
+    PDR_RESULT_UNKNOWN                = -7,     ///< 未知错误
+    PDR_RESULT_GENERAL_ERROR          = -6,     ///< 系统错误，如：crt错误
+    PDR_RESULT_DEVICE_INIT_ERROR      = -5,     ///< 设备驱动初始化错误
+    PDR_RESULT_CALL_ERROR             = -4,     ///< 错误的函数调用
+    PDR_RESULT_ALREADY_RUNNING        = -3,     ///< PDR已经启动
+    PDR_RESULT_PARAMETER_ERROR        = -2,     ///< 参数错误
+    PDR_RESULT_NONE                   = -1,     ///< 未检测到行进
+    PDR_RESULT_SUCCESS                = 0,      ///< 成功
 } PDRResult;
 
 /// @typedef PDRHandler
@@ -151,7 +154,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
 /// @param start_point [in] 起点经纬度数据，不可为空
 /// @param pdr_data [in] 传感器数据，用于确定初始行进方向，建议设置3秒以上传感器数据，pdr_data中的真实数据(true_data)可以为NULL
 /// @return 无
-int fm_pdr_start( PDRHandler handler, PDRPoint *start_point, char* raw_data_path );
+int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path );
 
 /// @fn void fm_pdr_start_with_file( PDRHandler* handler, char *sensor_file_dpath )
 /// @brief 基于记录在文件中的传感器数据，开始导航

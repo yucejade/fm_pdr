@@ -7,14 +7,14 @@ const std::string i2cDevice         = "/dev/i2c-1";
 uint8_t           deviceAddress_mmc = 0x30;
 uint8_t           deviceAddress_imu = 0x69;
 
-CFmDeviceWrapper::CFmDeviceWrapper(int sample_rate)
+CFmDeviceWrapper::CFmDeviceWrapper( int sample_rate ) : m_start_time_ms( 0 )
 {
     // Initializing the MMC56x3
     if ( ! m_sensor_mmc.begin( deviceAddress_mmc, i2cDevice.c_str() ) )
         throw std::invalid_argument( "Failed to initialize MMC56x3 sensor" );
 
     // Initializing the ICM42670
-    if (0 != m_sensor_imu.begin( false, deviceAddress_imu, i2cDevice.c_str() ))
+    if ( 0 != m_sensor_imu.begin( false, deviceAddress_imu, i2cDevice.c_str() ) )
         throw std::invalid_argument( "Failed to initialize ICM42670 sensor" );
 
     // Accel ODR = sample_rate(Hz) and Full Scale Range = 16G
@@ -26,50 +26,46 @@ CFmDeviceWrapper::CFmDeviceWrapper(int sample_rate)
     std::this_thread::sleep_for( std::chrono::milliseconds( 1000 ) );
 }
 
-CFmDeviceWrapper::~CFmDeviceWrapper()
-{
-}
+CFmDeviceWrapper::~CFmDeviceWrapper() {}
 
 int64_t CFmDeviceWrapper::GetMicrosecondTimestamp()
 {
     auto now = std::chrono::steady_clock::now();
-    return std::chrono::duration_cast<std::chrono::microseconds>(
-        now.time_since_epoch()
-    ).count();
+    return std::chrono::duration_cast< std::chrono::microseconds >( now.time_since_epoch() ).count();
 }
 
-bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, bool is_first, int64_t &timestamp )
+bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, bool is_first, int64_t& timestamp )
 {
     timestamp = GetMicrosecondTimestamp();
-    if ( is_first)
+    if ( is_first )
         m_start_time_ms = timestamp;
 
-    double duration = static_cast<double>(timestamp - m_start_time_ms) / 1000000.0;
+    double duration = static_cast< double >( timestamp - m_start_time_ms ) / 1000000.0;
 
     // TDK42607
     inv_imu_sensor_event_t imu_event;
-    float x, y, z;
-    const double gravity = 9.8035f;
+    float                  x, y, z;
+    const double           gravity = 9.8035f;
 
     m_sensor_imu.getDataFromRegisters( imu_event );
 
-    sensor_data.sensor_data.acc_time[index] = duration;
-    sensor_data.sensor_data.acc_x[index] = gravity * imu_event.accel[ 0 ] / 2048.0;
-    sensor_data.sensor_data.acc_y[index] = gravity * imu_event.accel[ 1 ] / 2048.0;
-    sensor_data.sensor_data.acc_z[index] = gravity * imu_event.accel[ 2 ] / 2048.0;
-    sensor_data.sensor_data.gyr_time[index] = duration;
-    sensor_data.sensor_data.gyr_x[index] = imu_event.gyro[ 0 ] / 16.4;
-    sensor_data.sensor_data.gyr_y[index] = imu_event.gyro[ 1 ] / 16.4;
-    sensor_data.sensor_data.gyr_z[index] = imu_event.gyro[ 2 ] / 16.4;
+    sensor_data.sensor_data.acc_time[ index ] = duration;
+    sensor_data.sensor_data.acc_x[ index ]    = gravity * imu_event.accel[ 0 ] / 2048.0;
+    sensor_data.sensor_data.acc_y[ index ]    = gravity * imu_event.accel[ 1 ] / 2048.0;
+    sensor_data.sensor_data.acc_z[ index ]    = gravity * imu_event.accel[ 2 ] / 2048.0;
+    sensor_data.sensor_data.gyr_time[ index ] = duration;
+    sensor_data.sensor_data.gyr_x[ index ]    = imu_event.gyro[ 0 ] / 16.4;
+    sensor_data.sensor_data.gyr_y[ index ]    = imu_event.gyro[ 1 ] / 16.4;
+    sensor_data.sensor_data.gyr_z[ index ]    = imu_event.gyro[ 2 ] / 16.4;
 
     // MMC56x3
     if ( ! m_sensor_mmc.getEvent( x, y, z ) )
         return false;
 
-    sensor_data.sensor_data.mag_time[index] = duration;
-    sensor_data.sensor_data.mag_x[index] = x;
-    sensor_data.sensor_data.mag_y[index] = y;
-    sensor_data.sensor_data.mag_z[index] = z;
+    sensor_data.sensor_data.mag_time[ index ] = duration;
+    sensor_data.sensor_data.mag_x[ index ]    = x;
+    sensor_data.sensor_data.mag_y[ index ]    = y;
+    sensor_data.sensor_data.mag_z[ index ]    = z;
 
     return true;
 }

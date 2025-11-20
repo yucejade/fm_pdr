@@ -106,7 +106,7 @@ build_pdr() {
         cd .. || exit 1
 
 	doxygen Doxyfile
-	mv docs build/package
+	rm build/package/docs -fr && mv -f docs build/package
 
         echo "PDR build completed."
     else
@@ -118,7 +118,7 @@ build_pdr() {
 # 定义编译PDRTest项目函数
 build_test() {
     if [ -d "example" ]; then
-        echo "Building PDRTest project..."
+        echo "Building PDRTestFromFile project..."
         # 创建build目录
         mkdir -p build/example
         # 进入example目录并编译
@@ -128,14 +128,25 @@ build_test() {
         cd .. || exit 1
         echo "PDRTestFromFile build completed."
 
+        echo "Building PDRTest project..."
         # 创建build目录
         mkdir -p build/example/plain_c
         # 进入example/plain_c目录并编译
         cd example/plain_c || exit 1
         cmake -B ../../build/example/plain_c -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../../build/package -S .
         make -C ../../build/example/plain_c install
-        cd ../../.. || exit 1
+        cd ../.. || exit 1
         echo "PDRTest build completed."
+
+        echo "Building mag_calib project..."
+        # 创建build目录
+        mkdir -p build/example/mag_calib
+        # 进入example/mag_calib
+        cd example/mag_calib || exit 1
+        cmake -B ../../build/example/mag_calib -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        make -C ../../build/example/mag_calib install
+        cd ../../.. || exit 1
+        echo "mag_calib build completed."
     else
         echo "src directory not found, build failed."
         exit 1

@@ -6,14 +6,14 @@
 class CFmDeviceWrapper
 {
 public:
-    CFmDeviceWrapper(int sample_rate);
+    CFmDeviceWrapper( int sample_rate );
     ~CFmDeviceWrapper();
 
-    bool ReadData( SensorData& sensor_data, unsigned long index, bool is_first, int64_t &timestamp );
     int64_t GetMicrosecondTimestamp();
+    bool    ReadData( SensorData& sensor_data, unsigned long index, bool is_first, int64_t& timestamp );
 private:
-    MMC56x3 m_sensor_mmc;
+    MMC56x3  m_sensor_mmc;
     ICM42670 m_sensor_imu;
 
-    int64_t m_start_time_ms = 0;
+    int64_t         m_start_time_ms;
 };

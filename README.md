@@ -14,17 +14,17 @@
 
 ## 示例程序运行
 
-### 训练模型
+### 训练PDR模型
 ```bash
 ./PDRTest --train-dir "./test_data/train_data"
 ```
 
-### 数据文件模式
+### 根据数据文件预测航迹
 ```bash
 ./PDRTest --dataset-dir "./test_data/sensor_data" --output-path "./Trajectory.csv"
 ```
 
-### 接入传感器的实时模式
+### 接入传感器实时预测航迹
 ```bash
 ./PDRTest -x 32.11199920 -y 118.9528682 --output-path "./Trajectory.csv"
 ```

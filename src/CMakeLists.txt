@@ -22,6 +22,7 @@ ENDIF()
 
 INCLUDE_DIRECTORIES(${PROJECT_NAME}
     PRIVATE
+    ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/device
     ${CMAKE_CURRENT_SOURCE_DIR}/device/TDK40607P
     ${CMAKE_CURRENT_SOURCE_DIR}/device/TDK40607P/imu
@@ -62,5 +63,6 @@ INSTALL(FILES fm_pdr.h
     direction_predictor.h
     step_predictor.h
     exception.h
+    magnetometer-calibration.h
     DESTINATION ${INCLUDE_DEST})
 INSTALL(FILES conf/config.json DESTINATION ${CONFIG_DEST})

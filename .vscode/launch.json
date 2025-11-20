@@ -97,6 +97,41 @@
             "externalConsole": false,
             "MIMode": "gdb",
             //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "根据磁力计数据文件做校准",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/mag_calib",
+            "args": [
+                "-m",
+                "magnetometer.csv",
+                "-o",
+                "mag_calibration.json"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
+            "name": "实时磁力计数据做校准",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/mag_calib",
+            "args": [
+                "-t",
+                "-c",
+                "mag_calibration.json"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
         }
     ]
 }

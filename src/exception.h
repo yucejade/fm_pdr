@@ -22,6 +22,20 @@ private:
 
 /// @defgroup 具体异常类型
 /// @brief 通过继承实现错误分类
+class SensorException : public PDRException
+{
+public:
+    enum SubCode
+    {
+        CALIBRATION_ERROR         = PDRResult::PDR_RESULT_CALIBRATION_ERROR,
+        CALIBRATION_SAVE_ERROR    = PDRResult::PDR_RESULT_CALIBRATION_SAVE_ERROR,
+        CALIBRATION_LOAD_ERROR    = PDRResult::PDR_RESULT_CALIBRATION_LOAD_ERROR,
+    };
+    SensorException( SubCode sc, const std::string& description ) : PDRException( sc, "Failed to data check: " + description ) {}
+};
+
+/// @defgroup 具体异常类型
+/// @brief 通过继承实现错误分类
 class DataException : public PDRException
 {
 public:
