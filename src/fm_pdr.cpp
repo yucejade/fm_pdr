@@ -679,14 +679,14 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
                 return PDR_RESULT_EMPTY_ERROR;
 
             // 构建符合append_to_csv要求的列数据结构
-            std::vector< std::pair< std::string, std::vector< double > > > columns = { { "Time (s)", { trajectories->time, trajectories->time + trajectories->length } },
-                                                                                       { "Latitude (°)", { trajectories->x, trajectories->x + trajectories->length } },
-                                                                                       { "Longitude (°)", { trajectories->y, trajectories->y + trajectories->length } },
-                                                                                       { "Height (m)", {} },
-                                                                                       { "Velocity (m/s)", {} },
-                                                                                       { "Direction (°)", { trajectories->direction, trajectories->direction + trajectories->length } },
-                                                                                       { "Horizontal Accuracy (m)", {} },
-                                                                                       { "Vertical Accuracy (°)", {} } };
+            std::vector< std::pair< std::string, std::vector< double > > > columns = { { "\"Time (s)\"", { trajectories->time, trajectories->time + trajectories->length } },
+                                                                                       { "\"Latitude (°)\"", { trajectories->x, trajectories->x + trajectories->length } },
+                                                                                       { "\"Longitude (°)\"", { trajectories->y, trajectories->y + trajectories->length } },
+                                                                                       { "\"Height (m)\"", {} },
+                                                                                       { "\"Velocity (m/s)\"", {} },
+                                                                                       { "\"Direction (°)\"", { trajectories->direction, trajectories->direction + trajectories->length } },
+                                                                                       { "\"Horizontal Accuracy (m)\"", {} },
+                                                                                       { "\"Vertical Accuracy (°)\"", {} } };
 
             // 调用核心写入逻辑
             append_to_csv( file_path, columns );
@@ -935,10 +935,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理加速度计数据
         if ( validate_sensor_data( sensor_data->acc_time, sensor_data->acc_x, sensor_data->acc_y, sensor_data->acc_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > acc_columns = { { "Time (s)", ptr_to_vector( sensor_data->acc_time, sensor_data->length ) },
-                                                                                           { "X (m/s^2)", ptr_to_vector( sensor_data->acc_x, sensor_data->length ) },
-                                                                                           { "Y (m/s^2)", ptr_to_vector( sensor_data->acc_y, sensor_data->length ) },
-                                                                                           { "Z (m/s^2)", ptr_to_vector( sensor_data->acc_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > acc_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->acc_time, sensor_data->length ) },
+                                                                                           { "\"X (m/s^2)\"", ptr_to_vector( sensor_data->acc_x, sensor_data->length ) },
+                                                                                           { "\"Y (m/s^2)\"", ptr_to_vector( sensor_data->acc_y, sensor_data->length ) },
+                                                                                           { "\"Z (m/s^2)\"", ptr_to_vector( sensor_data->acc_z, sensor_data->length ) } };
 
             std::string acc_path = dir_path_name + "/Accelerometer.csv";
             append_to_csv( acc_path, acc_columns );
@@ -947,10 +947,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // // 处理线性加速度计数据
         // if ( validate_sensor_data( sensor_data->lacc_time, sensor_data->lacc_x, sensor_data->lacc_y, sensor_data->lacc_z, sensor_data->length ) )
         // {
-        //     std::vector< std::pair< std::string, std::vector< double > > > lacc_columns = { { "Time (s)", ptr_to_vector( sensor_data->lacc_time, sensor_data->length ) },
-        //                                                                                     { "X (m/s^2)", ptr_to_vector( sensor_data->lacc_x, sensor_data->length ) },
-        //                                                                                     { "Y (m/s^2)", ptr_to_vector( sensor_data->lacc_y, sensor_data->length ) },
-        //                                                                                     { "Z (m/s^2)", ptr_to_vector( sensor_data->lacc_z, sensor_data->length ) } };
+        //     std::vector< std::pair< std::string, std::vector< double > > > lacc_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->lacc_time, sensor_data->length ) },
+        //                                                                                     { "\"X (m/s^2)\"", ptr_to_vector( sensor_data->lacc_x, sensor_data->length ) },
+        //                                                                                     { "\"Y (m/s^2)\"", ptr_to_vector( sensor_data->lacc_y, sensor_data->length ) },
+        //                                                                                     { "\"Z (m/s^2)\"", ptr_to_vector( sensor_data->lacc_z, sensor_data->length ) } };
 
         //     std::string lacc_path = dir_path_name + "/LinearAccelerometer.csv";
         //     append_to_csv( lacc_path, lacc_columns );
@@ -959,10 +959,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理陀螺仪数据
         if ( validate_sensor_data( sensor_data->gyr_time, sensor_data->gyr_x, sensor_data->gyr_y, sensor_data->gyr_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > gyr_columns = { { "Time (s)", ptr_to_vector( sensor_data->gyr_time, sensor_data->length ) },
-                                                                                           { "X (rad/s)", ptr_to_vector( sensor_data->gyr_x, sensor_data->length ) },
-                                                                                           { "Y (rad/s)", ptr_to_vector( sensor_data->gyr_y, sensor_data->length ) },
-                                                                                           { "Z (rad/s)", ptr_to_vector( sensor_data->gyr_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > gyr_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->gyr_time, sensor_data->length ) },
+                                                                                           { "\"X (rad/s)\"", ptr_to_vector( sensor_data->gyr_x, sensor_data->length ) },
+                                                                                           { "\"Y (rad/s)\"", ptr_to_vector( sensor_data->gyr_y, sensor_data->length ) },
+                                                                                           { "\"Z (rad/s)\"", ptr_to_vector( sensor_data->gyr_z, sensor_data->length ) } };
 
             std::string gyr_path = dir_path_name + "/Gyroscope.csv";
             append_to_csv( gyr_path, gyr_columns );
@@ -971,10 +971,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理磁力计数据
         if ( validate_sensor_data( sensor_data->mag_time, sensor_data->mag_x, sensor_data->mag_y, sensor_data->mag_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > mag_columns = { { "Time (s)", ptr_to_vector( sensor_data->mag_time, sensor_data->length ) },
-                                                                                           { "X (uT)", ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
-                                                                                           { "Y (uT)", ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
-                                                                                           { "Z (uT)", ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > mag_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->mag_time, sensor_data->length ) },
+                                                                                           { "\"X (uT)\"", ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
+                                                                                           { "\"Y (uT)\"", ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
+                                                                                           { "\"Z (uT)\"", ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
 
             std::string mag_path = dir_path_name + "/Magnetometer.csv";
             append_to_csv( mag_path, mag_columns );
@@ -988,14 +988,14 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         if ( validate_true_data( true_data->time_location, true_data->latitude, true_data->longitude, true_data->height, true_data->velocity, true_data->direction, true_data->horizontal_accuracy, true_data->vertical_accuracy, true_data->length ) )
         {
             std::vector< std::pair< std::string, std::vector< double > > > gps_columns = {
-                { "Time (s)", ptr_to_vector( true_data->time_location, true_data->length ) },
-                { "Latitude (°)", ptr_to_vector( true_data->latitude, true_data->length ) },
-                { "Longitude (°)", ptr_to_vector( true_data->longitude, true_data->length ) },
-                { "Height (m)", ptr_to_vector( true_data->height, true_data->length ) },
-                { "Velocity (m/s)", ptr_to_vector( true_data->velocity, true_data->length ) },
-                { "Direction (°)", ptr_to_vector( true_data->direction, true_data->length ) },
-                { "Horizontal Accuracy (m)", ptr_to_vector( true_data->horizontal_accuracy, true_data->length ) },
-                { "Vertical Accuracy (°)", ptr_to_vector( true_data->vertical_accuracy, true_data->length ) },
+                { "\"Time (s)\"", ptr_to_vector( true_data->time_location, true_data->length ) },
+                { "\"Latitude (°)\"", ptr_to_vector( true_data->latitude, true_data->length ) },
+                { "\"Longitude (°)\"", ptr_to_vector( true_data->longitude, true_data->length ) },
+                { "\"Height (m)\"", ptr_to_vector( true_data->height, true_data->length ) },
+                { "\"Velocity (m/s)\"", ptr_to_vector( true_data->velocity, true_data->length ) },
+                { "\"Direction (°)\"", ptr_to_vector( true_data->direction, true_data->length ) },
+                { "\"Horizontal Accuracy (m)\"", ptr_to_vector( true_data->horizontal_accuracy, true_data->length ) },
+                { "\"Vertical Accuracy (°)\"", ptr_to_vector( true_data->vertical_accuracy, true_data->length ) },
             };
 
             std::string gps_path = dir_path_name + "/Location.csv";
