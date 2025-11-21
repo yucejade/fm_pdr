@@ -375,12 +375,9 @@ static void do_pdr( FmPDRHandler* hdl )
         // 校准磁力计数据
         for ( int i = 0; i < count; ++i )
         {
-            // double mag_x = sensor_data.sensor_data.mag_x[ i ];
-            // double mag_y = sensor_data.sensor_data.mag_y[ i ];
-            // double mag_z = sensor_data.sensor_data.mag_z[ i ];
-            double& mag_x = sensor_data.sensor_data.mag_x[ i ];
-            double& mag_y = sensor_data.sensor_data.mag_y[ i ];
-            double& mag_z = sensor_data.sensor_data.mag_z[ i ];
+            double mag_x = sensor_data.sensor_data.mag_x[ i ];
+            double mag_y = sensor_data.sensor_data.mag_y[ i ];
+            double mag_z = sensor_data.sensor_data.mag_z[ i ];
 
             // 计算模长
             // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
@@ -393,6 +390,10 @@ static void do_pdr( FmPDRHandler* hdl )
             mag_z *= sensor_data.sensor_data.mag_z[ i ];
             // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
             // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+
+            sensor_data.sensor_data.mag_x[ i ] = mag_x;
+            sensor_data.sensor_data.mag_y[ i ] = mag_y;
+            sensor_data.sensor_data.mag_z[ i ] = mag_z;
         }
 
         // 转换为PDRData结构
@@ -841,7 +842,9 @@ void fm_pdr_uninit( PDRHandler* handler )
         return;
 
     FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( *handler );
-    if ( hdl->m_status != PDR_STOPPED )
+
+    // 以hdl->m_mag_calibration判断是否为实时PDR模式
+    if ( hdl->m_status != PDR_STOPPED && hdl->m_mag_calibration)
     {
         PDRTrajectoryArray ta;
         fm_pdr_stop( handler, &ta );

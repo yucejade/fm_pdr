@@ -137,16 +137,16 @@ typedef enum _PDRResult
 /// @details 该类型为PDR算法实例的不透明指针
 typedef void* PDRHandler;
 
-/// @fn int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array )
+/// @fn int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 初始化PDR算法
-/// @param config_path [in] 配置文件路径
+/// @param config_dir [in] 配置文件路径
 /// @param train_file_path [in] PDR训练数据路径，传递NULL表示不进行训练，只进行预测（使用配置项中的模型路径）和读取配置
 /// @param handler [out] PDR句柄
 /// @param trajectories_array [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
 /// @return >0: 训练生成位置点数量
 ///         =0: trajectories传递NULL值并且初始化成功
 ///         <0: 错误码
-int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array );
+int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array );
 
 /// @fn int fm_pdr_start( PDRHandler handler, PDRPoint *start_point, char* raw_data_path )
 /// @brief 基于传感器数据，开始导航
