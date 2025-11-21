@@ -11,7 +11,7 @@
 
 // 全局参数存储
 int   evaluation_value   = 0;
-char* config_path_value  = ( char* )"../conf/config.json";
+char* config_dir_value  = ( char* )"../conf";
 char* train_dir_value    = NULL;
 char* dataset_dir_value  = NULL;
 int   x_value            = 0;
@@ -22,7 +22,7 @@ char* raw_data_dir_value = NULL;
 // 长选项定义
 static struct option long_options[] = {
     { "evaluation", no_argument, NULL, 'e' },
-    { "config-path", required_argument, NULL, 'c' },
+    { "config-dir", required_argument, NULL, 'c' },
     { "train-dir", required_argument, NULL, 't' },
     { "dataset-dir", required_argument, NULL, 'd' },
     { "start-lon", required_argument, NULL, 'x' },
@@ -40,7 +40,7 @@ void show_help( char* prog_name )
     printf( "使用方法: %s [选项]\n\n", prog_name );
     printf( "选项:\n" );
     printf( "  -e, --evaluation\t\t\t是否打印指标评估\n" );
-    printf( "  -c, --config-path <配置文件路径>\t\t指定PDR配置文件路径，默认使用../conf/config.json\n" );
+    printf( "  -c, --config-dir <配置文件路径>\t\t指定PDR配置文件路径，默认使用../conf\n" );
     printf( "  -t, --train-dir <样本数据路径>\t\t表示需要加载的<样本数据路径>，训练模型输出到model_file_name配置项设置的路径下\n" );
     printf( "  -d, --dataset-dir <PDR数据路径>\t\t表示需要加载的<PDR测试数据路径>，不设置该标志使用传感器数据进行测试，使用model_file_name配置项设置路径下的模型文件进行推算\n" );
     printf( "  -x, --start-lon <经度>\t\t设置起始点经度值（WGS84坐标系，基于实时数据测试时生效）\n" );
@@ -87,7 +87,7 @@ int main( int argc, char** argv )
                 evaluation_value = 1;
                 break;
             case 'c':
-                config_path_value = optarg;
+                config_dir_value = optarg;
                 break;
             case 't':
                 train_dir_value = optarg;
@@ -133,7 +133,7 @@ int main( int argc, char** argv )
     // 打印结果
     // printf( "\nParsed parameters:\n" );
     // printf( "Evaluation (-e/--evaluation): %s\n", evaluation_value ? "true" : "false" );
-    // printf( "Config (-s/--config): %s\n", config_path_value );
+    // printf( "Config (-s/--config): %s\n", config_dir_value );
     // printf( "Train (-t/--train): %s\n", train_dir_value );
     // printf( "Dataset (-d/--dataset): %s\n", dataset_dir_value );
     // printf( "Start-Lon (-x/--start-lon): %f\n", x_value );
@@ -154,7 +154,7 @@ int main( int argc, char** argv )
     if ( train_dir_value )
     {
         // 通过训练数据初始化PDR，此时执行目录下会生成模型文件
-        ret = fm_pdr_init_with_file( config_path_value, train_dir_value, &pdr_handler, &trajectories_array );
+        ret = fm_pdr_init_with_file( config_dir_value, train_dir_value, &pdr_handler, &trajectories_array );
         if ( ret < PDR_RESULT_SUCCESS )
         {
             fprintf( stderr, "PDR初始化错误\n" );
@@ -183,7 +183,7 @@ int main( int argc, char** argv )
         if ( dataset_dir_value )
         {
             // 初始化PDR
-            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
+            ret = fm_pdr_init_with_file( config_dir_value, NULL, &pdr_handler, NULL );
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fprintf( stderr, "PDR初始化错误\n" );
@@ -228,7 +228,7 @@ int main( int argc, char** argv )
         else
         {
             // 初始化PDR句柄
-            ret = fm_pdr_init_with_file( config_path_value, NULL, &pdr_handler, NULL );
+            ret = fm_pdr_init_with_file( config_dir_value, NULL, &pdr_handler, NULL );
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fprintf( stderr, "PDR初始化错误\n" );

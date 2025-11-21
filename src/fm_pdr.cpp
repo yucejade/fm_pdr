@@ -5,6 +5,7 @@
 #include "exception.h"
 #include "fm_device_wrapper.h"
 #include "json_operator.h"
+#include "magnetometer-calibration.h"
 #include "pdr.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <cerrno>
@@ -27,12 +28,14 @@ typedef enum _FmPDRStatus
 
 typedef struct _FmPDRHandler
 {
+    std::string                                     m_config_dir;        // 配置文件目录
     PDRConfig                                       m_config;            // 配置
     CFmPDR                                          m_pdr;               // PDR句柄
     StartInfo                                       m_si;                // 起点信息
     CFmDataManager*                                 m_data_loader;       // 数据加载器
     char*                                           m_sensor_data_path;  // PDR数据文件路径
     fm_device_handle_t                              m_device_handle;     // 设备操作句柄
+    CFmMagnetometerCalibration*                     m_mag_calibration;   // 磁力计校准句柄
     int                                             m_status;            // 0:停止,1:启动
     std::thread                                     m_worker;            // 子线程句柄
     moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
@@ -53,7 +56,7 @@ static int eigenToPDRTrajectory( const Eigen::MatrixXd& predict_trajectories, PD
     const unsigned long n = predict_trajectories.rows();
     if ( n == 0 )
     {
-        trajectories = NULL;
+        trajectories = nullptr;
         return 0;
     }
 
@@ -93,10 +96,10 @@ static void free_trajectory( PDRTrajectory* trajectory ) noexcept
 {
     if ( ! trajectory )
         return;
-    trajectory->time      = NULL;
-    trajectory->x         = NULL;
-    trajectory->y         = NULL;
-    trajectory->direction = NULL;
+    trajectory->time      = nullptr;
+    trajectory->x         = nullptr;
+    trajectory->y         = nullptr;
+    trajectory->direction = nullptr;
     trajectory->length    = 0;
     delete static_cast< Eigen::MatrixXd* >( trajectory->ptr );
 }
@@ -277,6 +280,11 @@ static bool validate_true_data( double* time_location, double* latitude, double*
     return ( len > 0 ) && time_location && latitude && longitude && height && velocity && direction && horizontal_accuracy && vertical_accuracy;
 }
 
+std::string quote_header( const std::string& header )
+{
+    return "\"" + header + "\"";
+}
+
 static void append_to_csv( const std::string& full_path, const std::vector< std::pair< std::string, std::vector< double > > >& columns )
 {
     // 检查所有列数据长度是否一致，空列自动跳过检查
@@ -345,6 +353,7 @@ static void do_pdr( FmPDRHandler* hdl )
     PDRData    pdr_data;
     SensorData sensor_data;
     bool       is_first = true;
+    const int  count    = hdl->m_config.sample_rate * hdl->m_config.pdr_duration;
     int        ret;
 
     memset( &pdr_data, 0x00, sizeof( pdr_data ) );
@@ -353,7 +362,7 @@ static void do_pdr( FmPDRHandler* hdl )
     while ( hdl->m_status == PDR_RUNNING )
     {
         // 使用固定缓存模式读取传感器数据
-        ret = fm_device_read( hdl->m_device_handle, is_first, hdl->m_config.sample_rate * hdl->m_config.pdr_duration, 1, &sensor_data );
+        ret = fm_device_read( hdl->m_device_handle, is_first, count, 1, &sensor_data );
         if ( ret != 0 )
         {
             std::cerr << "Sensor data reading failed." << std::endl;
@@ -362,6 +371,29 @@ static void do_pdr( FmPDRHandler* hdl )
 
         // 标记不是第一次读取数据，即不需要再次创建缓存
         is_first = false;
+
+        // 校准磁力计数据
+        for ( int i = 0; i < count; ++i )
+        {
+            // double mag_x = sensor_data.sensor_data.mag_x[ i ];
+            // double mag_y = sensor_data.sensor_data.mag_y[ i ];
+            // double mag_z = sensor_data.sensor_data.mag_z[ i ];
+            double& mag_x = sensor_data.sensor_data.mag_x[ i ];
+            double& mag_y = sensor_data.sensor_data.mag_y[ i ];
+            double& mag_z = sensor_data.sensor_data.mag_z[ i ];
+
+            // 计算模长
+            // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+            // std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
+
+            hdl->m_mag_calibration->Calibration( mag_x, mag_y, mag_z );
+
+            mag_x *= sensor_data.sensor_data.mag_x[ i ];
+            mag_y *= sensor_data.sensor_data.mag_y[ i ];
+            mag_z *= sensor_data.sensor_data.mag_z[ i ];
+            // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+            // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+        }
 
         // 转换为PDRData结构
         pdr_data.sensor_data = sensor_data.sensor_data;
@@ -377,12 +409,13 @@ static void do_pdr( FmPDRHandler* hdl )
             }
         }
 
+        Eigen::MatrixXd* t = nullptr;
         try
         {
             // 启动导航
             CFmDataBufferLoader data_loader( hdl->m_config, 0, pdr_data );
-            hdl->m_si          = hdl->m_pdr.start( hdl->m_si.x0, hdl->m_si.y0, data_loader );
-            Eigen::MatrixXd* t = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
+            hdl->m_si = hdl->m_pdr.start( hdl->m_si.x0, hdl->m_si.y0, data_loader );
+            t         = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
             // 导航结果写入无锁队列
             if ( t->rows() > 0 )
@@ -390,16 +423,19 @@ static void do_pdr( FmPDRHandler* hdl )
         }
         catch ( const PDRException& e )
         {
+            delete t;
             std::cerr << "[PDRError:" << e.code() << "] " << e.what() << std::endl;
             continue;
         }
         catch ( const std::exception& e )
         {
+            delete t;
             std::cerr << "[StdError] " << e.what() << std::endl;
             continue;
         }
         catch ( ... )
         {
+            delete t;
             std::cerr << "[Unknown Error]" << std::endl;
             continue;
         }
@@ -409,9 +445,9 @@ static void do_pdr( FmPDRHandler* hdl )
     fm_device_free_sensor_data( sensor_data );
 }
 
-int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array )
+int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray* trajectories_array )
 {
-    if ( ! config_path || ! handler )
+    if ( ! config_dir || ! handler )
         return PDR_RESULT_PARAMETER_ERROR;
     if ( ! train_file_path && trajectories_array )
         return PDR_RESULT_PARAMETER_ERROR;
@@ -424,7 +460,8 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
 
     try
     {
-        PDRConfig config = CFmJSONOperator::readPDRConfigFromJson( config_path );
+        const string& config_path = string( config_dir ) + "//" + "config.json";
+        PDRConfig     config      = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
 
         if ( train_file_path )
         {
@@ -439,7 +476,7 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
 
                 trajectories_array->array = trajectories_vector->data();
                 trajectories_array->count = 1;
-                trajectories_array->ptr   = trajectories_array->array;
+                trajectories_array->ptr   = trajectories_vector;
             }
         }
         else
@@ -447,7 +484,8 @@ int fm_pdr_init_with_file( char* config_path, char* train_file_path, PDRHandler*
             h = new FmPDRHandler( config );
         }
 
-        *handler = static_cast< PDRHandler >( h );
+        h->m_config_dir = config_dir;
+        *handler        = static_cast< PDRHandler >( h );
     }
     catch ( const PDRException& e )
     {
@@ -498,16 +536,17 @@ int fm_pdr_get_config( PDRHandler handler, PDRConfig* config )
     return PDR_RESULT_SUCCESS;
 }
 
-int fm_pdr_start( PDRHandler handler, PDRPoint *start_point, char* raw_data_path )
+int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path )
 {
     if ( ! handler || ! start_point )
         return PDR_RESULT_PARAMETER_ERROR;
 
-    int ret = PDR_RESULT_SUCCESS;
+    int           ret = PDR_RESULT_SUCCESS;
+    FmPDRHandler* hdl = nullptr;
 
     try
     {
-        FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( handler );
+        hdl = reinterpret_cast< FmPDRHandler* >( handler );
         if ( hdl->m_status )
             return PDR_RESULT_ALREADY_RUNNING;
 
@@ -521,20 +560,40 @@ int fm_pdr_start( PDRHandler handler, PDRPoint *start_point, char* raw_data_path
         if ( ret != 0 )
             return PDR_RESULT_DEVICE_INIT_ERROR;
 
-        hdl->m_worker = std::thread( do_pdr, hdl );
+        const string& mag_calib_path = hdl->m_config_dir + "//" + "mag_calibration.json";
+        hdl->m_mag_calibration = new CFmMagnetometerCalibration( mag_calib_path );
+        hdl->m_worker          = std::thread( do_pdr, hdl );
     }
     catch ( const PDRException& e )
     {
+        if ( hdl )
+        {
+            delete hdl->m_mag_calibration;
+            hdl->m_mag_calibration = nullptr;
+            fm_device_uninit( hdl->m_device_handle );
+        }
         std::cerr << "[PDRError:" << e.code() << "] " << e.what() << std::endl;
         ret = e.code();
     }
     catch ( const std::exception& e )
     {
+        if ( hdl )
+        {
+            delete hdl->m_mag_calibration;
+            hdl->m_mag_calibration = nullptr;
+            fm_device_uninit( hdl->m_device_handle );
+        }
         std::cerr << "[StdError] " << e.what() << std::endl;
         ret = PDR_RESULT_GENERAL_ERROR;
     }
     catch ( ... )
     {
+        if ( hdl )
+        {
+            delete hdl->m_mag_calibration;
+            hdl->m_mag_calibration = nullptr;
+            fm_device_uninit( hdl->m_device_handle );
+        }
         std::cerr << "[Unknown Error]" << std::endl;
         ret = PDR_RESULT_UNKNOWN;
     }
@@ -546,33 +605,56 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path )
     if ( ! handler || ! sensor_file_path )
         return PDR_RESULT_PARAMETER_ERROR;
 
-    int ret = PDR_RESULT_SUCCESS;
+    int           ret = PDR_RESULT_SUCCESS;
+    FmPDRHandler* hdl = nullptr;
+
     try
     {
-        FmPDRHandler* hdl       = reinterpret_cast< FmPDRHandler* >( handler );
-        hdl->m_data_loader      = new CFmDataFileLoader( hdl->m_config, 0, sensor_file_path );
+        hdl                = reinterpret_cast< FmPDRHandler* >( handler );
+        hdl->m_data_loader = new CFmDataFileLoader( hdl->m_config, 0, sensor_file_path );
         // VectorXd pos_x          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LATITUDE );
         // VectorXd pos_y          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LONGITUDE );
         // double   x0             = pos_x[ 0 ];
         // double   y0             = pos_y[ 0 ];
-        double   x0             = 32.11199920;
-        double   y0             = 118.9528682;
+        double x0               = 32.11199920;
+        double y0               = 118.9528682;
         hdl->m_si               = hdl->m_pdr.start( x0, y0, *hdl->m_data_loader );
         hdl->m_sensor_data_path = strdup( sensor_file_path );
         hdl->m_status           = PDR_RUNNING;
     }
     catch ( const PDRException& e )
     {
+        if ( hdl )
+        {
+            delete hdl->m_data_loader;
+            hdl->m_data_loader = nullptr;
+            free( hdl->m_sensor_data_path );
+            hdl->m_sensor_data_path = nullptr;
+        }
         std::cerr << "[PDRError:" << e.code() << "] " << e.what() << std::endl;
         ret = e.code();
     }
     catch ( const std::exception& e )
     {
+        if ( hdl )
+        {
+            delete hdl->m_data_loader;
+            hdl->m_data_loader = nullptr;
+            free( hdl->m_sensor_data_path );
+            hdl->m_sensor_data_path = nullptr;
+        }
         std::cerr << "[StdError] " << e.what() << std::endl;
         ret = PDR_RESULT_GENERAL_ERROR;
     }
     catch ( ... )
     {
+        if ( hdl )
+        {
+            delete hdl->m_data_loader;
+            hdl->m_data_loader = nullptr;
+            free( hdl->m_sensor_data_path );
+            hdl->m_sensor_data_path = nullptr;
+        }
         std::cerr << "[Unknown Error]" << std::endl;
         ret = PDR_RESULT_UNKNOWN;
     }
@@ -605,7 +687,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 
             trajectories_array->array = trajectories_vector->data();
             trajectories_array->count = 1;
-            trajectories_array->ptr   = trajectories_array->array;
+            trajectories_array->ptr   = trajectories_vector;
         }
         else
         {
@@ -673,20 +755,20 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
             PDRTrajectory* trajectories = trajectories_array->array[ i ];
             if ( ! trajectories )
                 return PDR_RESULT_NONE;
-            
+
             // 数据指针完整性校验
             if ( ! trajectories->length || ! trajectories->time || ! trajectories->x || ! trajectories->y || ! trajectories->direction )
                 return PDR_RESULT_EMPTY_ERROR;
 
             // 构建符合append_to_csv要求的列数据结构
-            std::vector< std::pair< std::string, std::vector< double > > > columns = { { "\"Time (s)\"", { trajectories->time, trajectories->time + trajectories->length } },
-                                                                                       { "\"Latitude (°)\"", { trajectories->x, trajectories->x + trajectories->length } },
-                                                                                       { "\"Longitude (°)\"", { trajectories->y, trajectories->y + trajectories->length } },
-                                                                                       { "\"Height (m)\"", {} },
-                                                                                       { "\"Velocity (m/s)\"", {} },
-                                                                                       { "\"Direction (°)\"", { trajectories->direction, trajectories->direction + trajectories->length } },
-                                                                                       { "\"Horizontal Accuracy (m)\"", {} },
-                                                                                       { "\"Vertical Accuracy (°)\"", {} } };
+            std::vector< std::pair< std::string, std::vector< double > > > columns = { { quote_header( "Time (s)" ), { trajectories->time, trajectories->time + trajectories->length } },
+                                                                                       { quote_header( "Latitude (°)" ), { trajectories->x, trajectories->x + trajectories->length } },
+                                                                                       { quote_header( "Longitude (°)" ), { trajectories->y, trajectories->y + trajectories->length } },
+                                                                                       { quote_header( "Height (m)" ), {} },
+                                                                                       { quote_header( "Velocity (m/s)" ), {} },
+                                                                                       { quote_header( "Direction (°)" ), { trajectories->direction, trajectories->direction + trajectories->length } },
+                                                                                       { quote_header( "Horizontal Accuracy (m)" ), {} },
+                                                                                       { quote_header( "Vertical Accuracy (°)" ), {} } };
 
             // 调用核心写入逻辑
             append_to_csv( file_path, columns );
@@ -735,6 +817,8 @@ int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         hdl->m_status = PDR_STOPPED;
         if ( hdl->m_worker.joinable() )
             hdl->m_worker.join();
+        delete hdl->m_mag_calibration;
+        hdl->m_mag_calibration = nullptr;
         fm_device_uninit( hdl->m_device_handle );
 
         // 返回无锁队列中剩余的行人航迹
@@ -757,12 +841,18 @@ void fm_pdr_uninit( PDRHandler* handler )
         return;
 
     FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( *handler );
+    if ( hdl->m_status != PDR_STOPPED )
+    {
+        PDRTrajectoryArray ta;
+        fm_pdr_stop( handler, &ta );
+        fm_pdr_free_trajectory( &ta );
+    }
     delete[] hdl->m_config.model_name;
     delete[] hdl->m_config.model_file_name;
     delete hdl->m_data_loader;
     free( hdl->m_sensor_data_path );
     delete hdl;
-    hdl = NULL;
+    hdl = nullptr;
 }
 
 int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data )
@@ -935,10 +1025,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理加速度计数据
         if ( validate_sensor_data( sensor_data->acc_time, sensor_data->acc_x, sensor_data->acc_y, sensor_data->acc_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > acc_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->acc_time, sensor_data->length ) },
-                                                                                           { "\"X (m/s^2)\"", ptr_to_vector( sensor_data->acc_x, sensor_data->length ) },
-                                                                                           { "\"Y (m/s^2)\"", ptr_to_vector( sensor_data->acc_y, sensor_data->length ) },
-                                                                                           { "\"Z (m/s^2)\"", ptr_to_vector( sensor_data->acc_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > acc_columns = { { quote_header( "Time (s)" ), ptr_to_vector( sensor_data->acc_time, sensor_data->length ) },
+                                                                                           { quote_header( "X (m/s^2)" ), ptr_to_vector( sensor_data->acc_x, sensor_data->length ) },
+                                                                                           { quote_header( "Y (m/s^2)" ), ptr_to_vector( sensor_data->acc_y, sensor_data->length ) },
+                                                                                           { quote_header( "Z (m/s^2)" ), ptr_to_vector( sensor_data->acc_z, sensor_data->length ) } };
 
             std::string acc_path = dir_path_name + "/Accelerometer.csv";
             append_to_csv( acc_path, acc_columns );
@@ -947,10 +1037,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // // 处理线性加速度计数据
         // if ( validate_sensor_data( sensor_data->lacc_time, sensor_data->lacc_x, sensor_data->lacc_y, sensor_data->lacc_z, sensor_data->length ) )
         // {
-        //     std::vector< std::pair< std::string, std::vector< double > > > lacc_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->lacc_time, sensor_data->length ) },
-        //                                                                                     { "\"X (m/s^2)\"", ptr_to_vector( sensor_data->lacc_x, sensor_data->length ) },
-        //                                                                                     { "\"Y (m/s^2)\"", ptr_to_vector( sensor_data->lacc_y, sensor_data->length ) },
-        //                                                                                     { "\"Z (m/s^2)\"", ptr_to_vector( sensor_data->lacc_z, sensor_data->length ) } };
+        //     std::vector< std::pair< std::string, std::vector< double > > > lacc_columns = { { quote_header("Time (s)"), ptr_to_vector( sensor_data->lacc_time, sensor_data->length ) },
+        //                                                                                     { quote_header("X (m/s^2)"), ptr_to_vector( sensor_data->lacc_x, sensor_data->length ) },
+        //                                                                                     { quote_header("Y (m/s^2)"), ptr_to_vector( sensor_data->lacc_y, sensor_data->length ) },
+        //                                                                                     { quote_header("Z (m/s^2)"), ptr_to_vector( sensor_data->lacc_z, sensor_data->length ) } };
 
         //     std::string lacc_path = dir_path_name + "/LinearAccelerometer.csv";
         //     append_to_csv( lacc_path, lacc_columns );
@@ -959,10 +1049,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理陀螺仪数据
         if ( validate_sensor_data( sensor_data->gyr_time, sensor_data->gyr_x, sensor_data->gyr_y, sensor_data->gyr_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > gyr_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->gyr_time, sensor_data->length ) },
-                                                                                           { "\"X (rad/s)\"", ptr_to_vector( sensor_data->gyr_x, sensor_data->length ) },
-                                                                                           { "\"Y (rad/s)\"", ptr_to_vector( sensor_data->gyr_y, sensor_data->length ) },
-                                                                                           { "\"Z (rad/s)\"", ptr_to_vector( sensor_data->gyr_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > gyr_columns = { { quote_header( "Time (s)" ), ptr_to_vector( sensor_data->gyr_time, sensor_data->length ) },
+                                                                                           { quote_header( "X (rad/s)" ), ptr_to_vector( sensor_data->gyr_x, sensor_data->length ) },
+                                                                                           { quote_header( "Y (rad/s)" ), ptr_to_vector( sensor_data->gyr_y, sensor_data->length ) },
+                                                                                           { quote_header( "Z (rad/s)" ), ptr_to_vector( sensor_data->gyr_z, sensor_data->length ) } };
 
             std::string gyr_path = dir_path_name + "/Gyroscope.csv";
             append_to_csv( gyr_path, gyr_columns );
@@ -971,10 +1061,10 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         // 处理磁力计数据
         if ( validate_sensor_data( sensor_data->mag_time, sensor_data->mag_x, sensor_data->mag_y, sensor_data->mag_z, sensor_data->length ) )
         {
-            std::vector< std::pair< std::string, std::vector< double > > > mag_columns = { { "\"Time (s)\"", ptr_to_vector( sensor_data->mag_time, sensor_data->length ) },
-                                                                                           { "\"X (uT)\"", ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
-                                                                                           { "\"Y (uT)\"", ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
-                                                                                           { "\"Z (uT)\"", ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
+            std::vector< std::pair< std::string, std::vector< double > > > mag_columns = { { quote_header( "Time (s)" ), ptr_to_vector( sensor_data->mag_time, sensor_data->length ) },
+                                                                                           { quote_header( "X (uT)" ), ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
+                                                                                           { quote_header( "Y (uT)" ), ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
+                                                                                           { quote_header( "Z (uT)" ), ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
 
             std::string mag_path = dir_path_name + "/Magnetometer.csv";
             append_to_csv( mag_path, mag_columns );
@@ -988,14 +1078,14 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         if ( validate_true_data( true_data->time_location, true_data->latitude, true_data->longitude, true_data->height, true_data->velocity, true_data->direction, true_data->horizontal_accuracy, true_data->vertical_accuracy, true_data->length ) )
         {
             std::vector< std::pair< std::string, std::vector< double > > > gps_columns = {
-                { "\"Time (s)\"", ptr_to_vector( true_data->time_location, true_data->length ) },
-                { "\"Latitude (°)\"", ptr_to_vector( true_data->latitude, true_data->length ) },
-                { "\"Longitude (°)\"", ptr_to_vector( true_data->longitude, true_data->length ) },
-                { "\"Height (m)\"", ptr_to_vector( true_data->height, true_data->length ) },
-                { "\"Velocity (m/s)\"", ptr_to_vector( true_data->velocity, true_data->length ) },
-                { "\"Direction (°)\"", ptr_to_vector( true_data->direction, true_data->length ) },
-                { "\"Horizontal Accuracy (m)\"", ptr_to_vector( true_data->horizontal_accuracy, true_data->length ) },
-                { "\"Vertical Accuracy (°)\"", ptr_to_vector( true_data->vertical_accuracy, true_data->length ) },
+                { quote_header( "Time (s)" ), ptr_to_vector( true_data->time_location, true_data->length ) },
+                { quote_header( "Latitude (°)" ), ptr_to_vector( true_data->latitude, true_data->length ) },
+                { quote_header( "Longitude (°)" ), ptr_to_vector( true_data->longitude, true_data->length ) },
+                { quote_header( "Height (m)" ), ptr_to_vector( true_data->height, true_data->length ) },
+                { quote_header( "Velocity (m/s)" ), ptr_to_vector( true_data->velocity, true_data->length ) },
+                { quote_header( "Direction (°)" ), ptr_to_vector( true_data->direction, true_data->length ) },
+                { quote_header( "Horizontal Accuracy (m)" ), ptr_to_vector( true_data->horizontal_accuracy, true_data->length ) },
+                { quote_header( "Vertical Accuracy (°)" ), ptr_to_vector( true_data->vertical_accuracy, true_data->length ) },
             };
 
             std::string gps_path = dir_path_name + "/Location.csv";
