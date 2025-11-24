@@ -121,6 +121,11 @@ void CFmMagnetometerCalibration::FitEllipsoid( Eigen::VectorXd& magX, Eigen::Vec
     m_result.m_n << u( 6 ), u( 7 ), u( 8 );  // 3维偏移向量（椭球中心）
     m_result.m_d = u( 9 );                   // 缩放因子（球半径）
 
+    // 检查m_Q是否正定（所有特征值>0）
+    Eigen::SelfAdjointEigenSolver<Eigen::Matrix3d> eigensolver(m_result.m_Q);
+    if (eigensolver.eigenvalues().minCoeff() < 1e-6)  // 允许微小正数（避免浮点误差）
+        throw std::runtime_error("Ellipsoid fitting failed: Q matrix is not positive definite.");
+
     // 7. 生成时间戳
     m_result.m_timestamp = GetTimestamp();
 
