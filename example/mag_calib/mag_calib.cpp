@@ -40,7 +40,8 @@ public:
         std::cout << "Usage: pdr [options]\n"
                   << "Options:\n"
                   << "  -t, --type\t\t包含type选项，实时链接磁力计显示校准前后数值，否则输入磁力计数据生成校准文件\n"
-                  << "  -c, --calibration-path <校准文件>\t\t默认使用./mag_calib.json\n"
+                  << "  -c, --calibration-path <校准文件>\t\t实时链接磁力计时生成的校准文件，默认使用./mag_calib.json\n"
+                  << "  -d, --data-path <数据文件>\t\t实时链接磁力计时生成的数据文件，默认使用./mag_data.csv\n"
                   << "  -m, --mag-data-path <磁力计数据文件>\t\t默认使用./Magnetometer.csv\n"
                   << "  -o, --output-path <输出校准结果文件>\t\t默认使用./mag_calib.json\n"
                   << "  -h, --help\t\t\t\t帮助信息\n";
@@ -72,10 +73,18 @@ int main( int argc, char* argv[] )
             if ( calibration_path.empty() )
                 calibration_path = "./mag_calib.json";
         }
+        std::string data_path = parser.getOption( "-d" );
+        if ( data_path.empty() )
+        {
+            data_path = parser.getOption( "--data-path" );
+            if ( data_path.empty() )
+                data_path = "./mag_data.csv";
+        }
 
         try
         {
             fm_device_handle_t         device_handler;
+            PDRData                    pdr_data;
             SensorData                 sensor_data;
             bool                       is_first = true;
             int                        count    = 0;
@@ -86,6 +95,7 @@ int main( int argc, char* argv[] )
             if ( ret != 0 )
                 return PDR_RESULT_DEVICE_INIT_ERROR;
 
+            memset( &pdr_data, 0x00, sizeof( pdr_data ) );
             memset( &sensor_data, 0x00, sizeof( sensor_data ) );
 
             while ( ++count <= 30 )
@@ -120,6 +130,17 @@ int main( int argc, char* argv[] )
                     mag_z *= sensor_data.sensor_data.mag_z[i];
                     double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
                     std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+                }
+
+                // 转换为PDRData结构
+                pdr_data.sensor_data = sensor_data.sensor_data;
+
+                // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
+                int result = fm_pdr_save_pdr_data( ( char* )data_path.c_str(), &pdr_data );
+                if ( result != 0 )
+                {
+                    std::cerr << "Failed to save data." << std::endl;
+                    continue;
                 }
             }
 

@@ -105,7 +105,7 @@
             "program": "${workspaceFolder}/build/package/bin/mag_calib",
             "args": [
                 "-m",
-                "output_sensor_data/Magnetometer.csv",
+                "mag_cralib/Magnetometer.csv",
                 "-o",
                 "mag_calibration.json"
             ],
@@ -124,7 +124,9 @@
             "args": [
                 "-t",
                 "-c",
-                "mag_calibration.json"
+                "mag_calibration.json",
+                "-d",
+                "mag_data.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/package/bin",
