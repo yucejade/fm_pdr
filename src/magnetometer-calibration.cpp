@@ -71,7 +71,7 @@ void CFmMagnetometerCalibration::FitEllipsoid( Eigen::VectorXd& magX, Eigen::Vec
     if ( num_points < 9 )
         throw std::invalid_argument( "Ellipsoid fitting requires at least 9 data points." );
 
-    // 1. 构造椭球方程的设计矩阵D（原逻辑保持不变）
+    // 1. 构造椭球方程的设计矩阵D
     Eigen::VectorXd a1  = magX.array().square();
     Eigen::VectorXd a2  = magY.array().square();
     Eigen::VectorXd a3  = magZ.array().square();
@@ -114,17 +114,17 @@ void CFmMagnetometerCalibration::FitEllipsoid( Eigen::VectorXd& magX, Eigen::Vec
     Eigen::VectorXd u( 10 );                          // 合并为10维向量
     u << u1, u2;
 
-    // 6. 填充校准结果到result（核心修改点）
+    // 6. 填充校准结果到result
     m_result.m_Q << u( 0 ), u( 5 ), u( 4 ),  // 3x3校准矩阵（对称矩阵）
         u( 5 ), u( 1 ), u( 3 ), u( 4 ), u( 3 ), u( 2 );
 
     m_result.m_n << u( 6 ), u( 7 ), u( 8 );  // 3维偏移向量（椭球中心）
     m_result.m_d = u( 9 );                   // 缩放因子（球半径）
 
-    // 7. 生成时间戳（新增）
+    // 7. 生成时间戳
     m_result.m_timestamp = GetTimestamp();
 
-    // 8. 计算误差（若ComputeError依赖校准参数，需调整其接口，此处保留原调用）
+    // 8. 计算误差
     ComputeError( magX, magY, magZ );
 }
 
