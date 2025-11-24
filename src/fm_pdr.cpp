@@ -1065,9 +1065,9 @@ int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
         if ( validate_sensor_data( sensor_data->mag_time, sensor_data->mag_x, sensor_data->mag_y, sensor_data->mag_z, sensor_data->length ) )
         {
             std::vector< std::pair< std::string, std::vector< double > > > mag_columns = { { quote_header( "Time (s)" ), ptr_to_vector( sensor_data->mag_time, sensor_data->length ) },
-                                                                                           { quote_header( "X (uT)" ), ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
-                                                                                           { quote_header( "Y (uT)" ), ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
-                                                                                           { quote_header( "Z (uT)" ), ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
+                                                                                           { quote_header( "X (µT)" ), ptr_to_vector( sensor_data->mag_x, sensor_data->length ) },
+                                                                                           { quote_header( "Y (µT)" ), ptr_to_vector( sensor_data->mag_y, sensor_data->length ) },
+                                                                                           { quote_header( "Z (µT)" ), ptr_to_vector( sensor_data->mag_z, sensor_data->length ) } };
 
             std::string mag_path = dir_path_name + "/Magnetometer.csv";
             append_to_csv( mag_path, mag_columns );
