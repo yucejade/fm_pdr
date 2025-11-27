@@ -145,8 +145,18 @@ build_test() {
         cd example/mag_calib || exit 1
         cmake -B ../../build/example/mag_calib -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../../build/package -S .
         make -C ../../build/example/mag_calib install
-        cd ../../.. || exit 1
+        cd ../.. || exit 1
         echo "mag_calib build completed."
+
+        echo "Building mag_calib2 project..."
+        # 创建build目录
+        mkdir -p build/example/mag_calib2
+        # 进入example/mag_calib2
+        cd example/mag_calib2 || exit 1
+        cmake -B ../../build/example/mag_calib2 -DCMAKE_EXPORT_COMPILE_COMMANDS=ON -DCMAKE_BUILD_TYPE=debug -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        make -C ../../build/example/mag_calib2 install
+        cd ../.. || exit 1
+        echo "mag_calib2 build completed."
     else
         echo "src directory not found, build failed."
         exit 1
