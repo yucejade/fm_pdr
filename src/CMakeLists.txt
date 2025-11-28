@@ -63,7 +63,7 @@ INSTALL(FILES fm_pdr.h
     direction_predictor.h
     step_predictor.h
     exception.h
-    magnetometer-calibration.h
+    realtime_mag_calibration.h
     DESTINATION ${INCLUDE_DEST})
 INSTALL(FILES conf/config.json DESTINATION ${CONFIG_DEST})
 INSTALL(FILES conf/mag_calibration.json DESTINATION ${CONFIG_DEST})
