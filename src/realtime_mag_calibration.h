@@ -21,7 +21,7 @@ private:
     bool computeParameters()
     {
         int n = window.size();
-        if ( n < windowSize )
+        if ( n < 9 )
             return false;
 
         // 构造设计矩阵M（n行×10列）
@@ -73,7 +73,10 @@ public:
     {
         auto               now     = steady_clock::now();
         duration< double > elapsed = now - lastCalibrateTime;
-        return elapsed.count() >= calibrateInterval;
+        bool time_status = elapsed.count() >= calibrateInterval;
+        bool window_status = ((int)window.size() >= windowSize);
+        
+        return time_status && window_status;
     }
 
     // 执行校准（返回是否成功）

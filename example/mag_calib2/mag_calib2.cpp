@@ -45,7 +45,7 @@ int main( int argc, char* argv[] )
             {
                 // 输出校准参数变化
                 Vector3d hi = calibrator.getHardIron();
-                cout << "Calibrated at " << fixed << setprecision( 1 ) << "Hard Iron: (" << hi.x() << "," << hi.y() << "," << hi.z() << ")\n";
+                // cout << "Calibrated at " << fixed << setprecision( 1 ) << "Hard Iron: (" << hi.x() << "," << hi.y() << "," << hi.z() << ")\n";
             }
         }
 
