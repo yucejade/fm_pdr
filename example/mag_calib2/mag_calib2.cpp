@@ -12,7 +12,7 @@ int main( int argc, char* argv[] )
 {
     fm_device_handle_t    device_handler;
     SensorData            sensor_data;
-    RealTimeMagCalibrator calibrator( 40, 1.0 );  // 窗口40个点，每1秒校准1次
+    RealTimeMagCalibrator calibrator( 100, 4.0 );  // 窗口100个点，每4秒校准1次
     int                   ret = PDR_RESULT_SUCCESS;
 
     ret = fm_device_init( 50, &device_handler );
@@ -21,7 +21,7 @@ int main( int argc, char* argv[] )
 
     cout << "Real-time Magnetometer Calibration Demo\n";
     cout << "----------------------------------------\n";
-    cout << "Raw Mag (x,y,z) | Calibrated Mag (x,y,z) | Hard Iron (x,y,z)\n";
+    cout << "Raw Mag (x,y,z) | Calibrated Mag (x,y,z,mag) | Hard Iron (x,y,z)\n";
     cout << "----------------------------------------\n";
 
     while ( true )
@@ -41,7 +41,7 @@ int main( int argc, char* argv[] )
         // 2. 检查是否需要校准（每1秒一次）
         if ( calibrator.needCalibrate() )
         {
-            if ( calibrator.calibrate() )
+            if ( calibrator.calibrateHardIronAndScale() )
             {
                 // 输出校准参数变化
                 Vector3d hi = calibrator.getHardIron();
@@ -51,7 +51,8 @@ int main( int argc, char* argv[] )
 
         // 3. 应用校准并输出结果
         Vector3d calibrated = calibrator.apply( raw );
-        cout << fixed << setprecision( 1 ) << "(" << raw.x() << "," << raw.y() << "," << raw.z() << ") | (" << calibrated.x() << "," << calibrated.y() << "," << calibrated.z() << ")\n";
+        double magnitude = std::sqrt(calibrated.x() * calibrated.x() + calibrated.y() * calibrated.y() + calibrated.z() * calibrated.z());
+        cout << fixed << setprecision( 1 ) << "(" << raw.x() << "," << raw.y() << "," << raw.z() << ") | (" << calibrated.x() << "," << calibrated.y() << "," << calibrated.z() << "," << magnitude << ")\n";
 
         // 控制输出频率（与数据生成频率一致）
         this_thread::sleep_for( milliseconds( 50 ) );

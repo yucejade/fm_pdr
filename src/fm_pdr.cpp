@@ -383,14 +383,14 @@ static void do_pdr( FmPDRHandler* hdl )
             // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
             // std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
 
-            hdl->m_mag_calibration->Calibration( mag_x, mag_y, mag_z );
+            // hdl->m_mag_calibration->Calibration( mag_x, mag_y, mag_z );
 
-            double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-            std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+            // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+            // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
             
-            mag_x *= sensor_data.sensor_data.mag_x[ i ];
-            mag_y *= sensor_data.sensor_data.mag_y[ i ];
-            mag_z *= sensor_data.sensor_data.mag_z[ i ];
+            // mag_x *= sensor_data.sensor_data.mag_x[ i ];
+            // mag_y *= sensor_data.sensor_data.mag_y[ i ];
+            // mag_z *= sensor_data.sensor_data.mag_z[ i ];
 
             sensor_data.sensor_data.mag_x[ i ] = mag_x;
             sensor_data.sensor_data.mag_y[ i ] = mag_y;

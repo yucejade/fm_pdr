@@ -1,9 +1,14 @@
 #include "fm_device_wrapper.h"
-#include "magnetometer-calibration.h"
+#include "SoftAndHardIronCalibration.h"
+#include "SixParametersCorrector.h"
+#include <rapidcsv.h>
 #include <algorithm>
 #include <iostream>
 #include <string>
 #include <vector>
+
+using namespace Boardcore;
+using namespace Eigen;
 
 // 简单的命令行参数解析类
 class ArgParser
@@ -57,10 +62,10 @@ public:
         std::cout << "Usage: pdr [options]\n"
                   << "Options:\n"
                   << "  -t, --type\t\t包含type选项，实时链接磁力计显示校准前后数值，否则输入磁力计数据生成校准文件\n"
-                  << "  -c, --calibration-path <校准文件>\t\t实时链接磁力计时生成的校准文件，默认使用./mag_calib.json\n"
+                  << "  -c, --calibration-path <校准文件>\t\t实时链接磁力计时生成的校准文件，默认使用./mag_calib.csv\n"
                   << "  -i, --interval <时间间隔>\t\t实时连接磁力计时的时间间隔，默认使用180\n"
                   << "  -d, --mag-data-path <磁力计数据文件>\t\t默认使用./Magnetometer.csv\n"
-                  << "  -o, --output-path <输出校准结果文件>\t\t默认使用./mag_calib.json\n"
+                  << "  -o, --output-path <输出校准结果文件>\t\t默认使用./mag_calib.csv\n"
                   << "  -h, --help\t\t\t\t帮助信息\n";
     }
 private:
@@ -88,7 +93,7 @@ int main( int argc, char* argv[] )
         {
             calibration_path = parser.getOption( "--calibration-path" );
             if ( calibration_path.empty() )
-                calibration_path = "./mag_calib.json";
+                calibration_path = "./mag_calib.csv";
         }
 
         int interval;
@@ -105,8 +110,18 @@ int main( int argc, char* argv[] )
             SensorData                 sensor_data;
             bool                       is_first = true;
             int                        count    = 0;
-            CFmMagnetometerCalibration calib( calibration_path );
+            SixParametersCorrector     loaded_corrector;
             int                        ret = PDR_RESULT_SUCCESS;
+
+            if (loaded_corrector.fromFile(calibration_path)) {
+                std::cout << "成功加载校准参数！" << std::endl;
+                // 打印加载的参数（可选，用于验证）
+                std::cout << "加载的硬铁偏移（b）: " << loaded_corrector.getb().transpose() << " μT" << std::endl;
+                std::cout << "加载的软铁增益（A）: " << loaded_corrector.getA().transpose() << "（无单位）" << std::endl;
+            } else {
+                std::cerr << "加载校准参数失败！" << std::endl;
+                return 1;
+            }
 
             ret = fm_device_init( 50, &device_handler );
             if ( ret != 0 )
@@ -133,21 +148,32 @@ int main( int argc, char* argv[] )
 
                 for (int i = 0; i < length; ++i)
                 {
-                    double mag_x = sensor_data.sensor_data.mag_x[i];
-                    double mag_y = sensor_data.sensor_data.mag_y[i];
-                    double mag_z = sensor_data.sensor_data.mag_z[i];
+                    const double& timestamp = sensor_data.sensor_data.acc_time[i];
+                    const double& mag_x = sensor_data.sensor_data.mag_x[i];
+                    const double& mag_y = sensor_data.sensor_data.mag_y[i];
+                    const double& mag_z = sensor_data.sensor_data.mag_z[i];
+                    MagnetometerData raw_data(timestamp, mag_x, mag_y, mag_z);
+                    Vector3f raw_vec(raw_data.magneticFieldX, raw_data.magneticFieldY, raw_data.magneticFieldZ);
 
-                    // 计算模长
-                    double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-                    std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
+                    // 调用校正方法（公式：校正后 = (原始数据 - 偏移) × 增益）
+                    Vector3f corrected_vec = loaded_corrector.correct(raw_vec);
 
-                    calib.Calibration( mag_x, mag_y, mag_z );
+                    // 输出校正结果
+                    std::cout << "\n=== 数据校正示例 ===" << std::endl;
+                    std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
+                    std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
 
-                    mag_x *= sensor_data.sensor_data.mag_x[i];
-                    mag_y *= sensor_data.sensor_data.mag_y[i];
-                    mag_z *= sensor_data.sensor_data.mag_z[i];
-                    double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-                    std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+                    // // 计算模长
+                    // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+                    // std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
+
+                    // calib.Calibration( mag_x, mag_y, mag_z );
+
+                    // mag_x *= sensor_data.sensor_data.mag_x[i];
+                    // mag_y *= sensor_data.sensor_data.mag_y[i];
+                    // mag_z *= sensor_data.sensor_data.mag_z[i];
+                    // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+                    // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
                 }
             }
 
@@ -175,12 +201,40 @@ int main( int argc, char* argv[] )
         {
             output_path = parser.getOption( "--output-path" );
             if ( output_path.empty() )
-                output_path = "./mag_calib.json";
+                output_path = "./mag_calib.csv";
         }
 
         try
         {
-            CFmMagnetometerCalibration calib( mag_data_path, output_path );
+            SoftAndHardIronCalibration calib;
+            rapidcsv::Document doc(mag_data_path, rapidcsv::LabelParams( 0 ));
+            std::vector<double> mag_x = doc.GetColumn< double >( "X (µT)" );  // 提取"X (µT)"列的所有数据
+            std::vector<double> mag_y = doc.GetColumn< double >( "Y (µT)" );  // 提取"Y (µT)"列的所有数据
+            std::vector<double> mag_z = doc.GetColumn< double >( "Z (µT)" );  // 提取"Z (µT)"列的所有数据
+
+            for (size_t i = 0; i < mag_x.size(); ++i)
+            {
+                MagnetometerData data;
+
+                // 复制文件中的数据
+                data.magneticFieldX = mag_x[i];
+                data.magneticFieldY = mag_y[i];
+                data.magneticFieldZ = mag_z[i];
+
+                // 喂入校准器（累积数据）
+                calib.feed(data);
+            }
+
+            SixParametersCorrector result = calib.computeResult();
+            std::cout << "校准完成！" << std::endl;
+
+            const std::string param_file = output_path;
+            if (result.toFile(param_file)) {
+                std::cout << "校准参数已保存到：" << param_file << std::endl;
+            } else {
+                std::cerr << "保存校准参数失败！" << std::endl;
+                return 1;
+            }
         }
         catch ( ... )
         {

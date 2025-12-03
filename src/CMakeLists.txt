@@ -7,6 +7,7 @@ MESSAGE(STATUS "###Start building ${PROJECT_NAME}###")
 SET(CMAKE_CXX_STANDARD 17)
 SET(CMAKE_CXX_FLAGS "-Wno-literal-suffix")
 
+AUX_SOURCE_DIRECTORY(calibration CALIB_SRCS)
 AUX_SOURCE_DIRECTORY(device/MMC56x3 DIR_MMC56x3_SRCS)
 AUX_SOURCE_DIRECTORY(device/TDK40607P/imu DIR_TDK40607P_IMU_SRCS)
 AUX_SOURCE_DIRECTORY(device/TDK40607P DIR_TDK40607P_SRCS)
@@ -23,6 +24,7 @@ ENDIF()
 INCLUDE_DIRECTORIES(${PROJECT_NAME}
     PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_SOURCE_DIR}/calibration
     ${CMAKE_CURRENT_SOURCE_DIR}/device
     ${CMAKE_CURRENT_SOURCE_DIR}/device/TDK40607P
     ${CMAKE_CURRENT_SOURCE_DIR}/device/TDK40607P/imu
@@ -63,7 +65,13 @@ INSTALL(FILES fm_pdr.h
     direction_predictor.h
     step_predictor.h
     exception.h
-    realtime_mag_calibration.h
+    calibration/magnetometer-calibration.h
+    calibration/realtime_mag_calibration.h
+    calibration/BiasCorrector.h
+    calibration/SensorData.h
+    calibration/SensorDataExtra.h
+    calibration/SixParametersCorrector.h
+    calibration/SoftAndHardIronCalibration.h
     DESTINATION ${INCLUDE_DEST})
 INSTALL(FILES conf/config.json DESTINATION ${CONFIG_DEST})
 INSTALL(FILES conf/mag_calibration.json DESTINATION ${CONFIG_DEST})
