@@ -5,7 +5,9 @@
 #include "exception.h"
 #include "fm_device_wrapper.h"
 #include "json_operator.h"
-#include "magnetometer-calibration.h"
+// #include "magnetometer-calibration.h"
+#include "SixParametersCorrector.h"
+#include "SensorData.h"
 #include "pdr.h"
 #include <Eigen/src/Core/Matrix.h>
 #include <cerrno>
@@ -20,6 +22,8 @@
 #include <thread>
 #include <vector>
 
+using namespace Boardcore;
+
 typedef enum _FmPDRStatus
 {
     PDR_STOPPED,
@@ -28,14 +32,15 @@ typedef enum _FmPDRStatus
 
 typedef struct _FmPDRHandler
 {
-    std::string                                     m_config_dir;        // 配置文件目录
-    PDRConfig                                       m_config;            // 配置
-    CFmPDR                                          m_pdr;               // PDR句柄
-    StartInfo                                       m_si;                // 起点信息
-    CFmDataManager*                                 m_data_loader;       // 数据加载器
-    char*                                           m_sensor_data_path;  // PDR数据文件路径
-    fm_device_handle_t                              m_device_handle;     // 设备操作句柄
-    CFmMagnetometerCalibration*                     m_mag_calibration;   // 磁力计校准句柄
+    std::string        m_config_dir;        // 配置文件目录
+    PDRConfig          m_config;            // 配置
+    CFmPDR             m_pdr;               // PDR句柄
+    StartInfo          m_si;                // 起点信息
+    CFmDataManager*    m_data_loader;       // 数据加载器
+    char*              m_sensor_data_path;  // PDR数据文件路径
+    fm_device_handle_t m_device_handle;     // 设备操作句柄
+    // CFmMagnetometerCalibration*                  m_mag_calibration;   // 磁力计校准句柄
+    SixParametersCorrector*                         m_loaded_corrector;  // 矫正器句柄
     int                                             m_status;            // 0:停止,1:启动
     std::thread                                     m_worker;            // 子线程句柄
     moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
@@ -375,9 +380,12 @@ static void do_pdr( FmPDRHandler* hdl )
         // 校准磁力计数据
         for ( int i = 0; i < count; ++i )
         {
-            double mag_x = sensor_data.sensor_data.mag_x[ i ];
-            double mag_y = sensor_data.sensor_data.mag_y[ i ];
-            double mag_z = sensor_data.sensor_data.mag_z[ i ];
+            const double& timestamp = sensor_data.sensor_data.acc_time[i];
+            const double& mag_x = sensor_data.sensor_data.mag_x[ i ];
+            const double& mag_y = sensor_data.sensor_data.mag_y[ i ];
+            const double& mag_z = sensor_data.sensor_data.mag_z[ i ];
+            MagnetometerData raw_data(timestamp, mag_x, mag_y, mag_z);
+            Vector3f raw_vec(raw_data.magneticFieldX, raw_data.magneticFieldY, raw_data.magneticFieldZ);
 
             // 计算模长
             // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
@@ -387,14 +395,22 @@ static void do_pdr( FmPDRHandler* hdl )
 
             // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
             // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
-            
+
             // mag_x *= sensor_data.sensor_data.mag_x[ i ];
             // mag_y *= sensor_data.sensor_data.mag_y[ i ];
             // mag_z *= sensor_data.sensor_data.mag_z[ i ];
 
-            sensor_data.sensor_data.mag_x[ i ] = mag_x;
-            sensor_data.sensor_data.mag_y[ i ] = mag_y;
-            sensor_data.sensor_data.mag_z[ i ] = mag_z;
+            // 调用校正方法（公式：校正后 = (原始数据 - 偏移) × 增益）
+            Vector3f corrected_vec = hdl->m_loaded_corrector->correct(raw_vec);
+
+            // 输出校正结果
+            std::cout << "\n=== 数据校正示例 ===" << std::endl;
+            std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
+            std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
+
+            sensor_data.sensor_data.mag_x[ i ] = corrected_vec[0];
+            sensor_data.sensor_data.mag_y[ i ] = corrected_vec[1];
+            sensor_data.sensor_data.mag_z[ i ] = corrected_vec[2];
         }
 
         // 转换为PDRData结构
@@ -562,16 +578,20 @@ int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path
         if ( ret != 0 )
             return PDR_RESULT_DEVICE_INIT_ERROR;
 
-        const string& mag_calib_path = hdl->m_config_dir + "//" + "mag_calibration.json";
-        hdl->m_mag_calibration = new CFmMagnetometerCalibration( mag_calib_path );
-        hdl->m_worker          = std::thread( do_pdr, hdl );
+        // const string& mag_calib_path = hdl->m_config_dir + "//" + "mag_calibration.json";
+        // hdl->m_mag_calibration = new CFmMagnetometerCalibration( mag_calib_path );
+        const string& mag_calib_path = hdl->m_config_dir + "//" + "mag_calibration.csv";
+        hdl->m_loaded_corrector      = new SixParametersCorrector();
+        if ( ! hdl->m_loaded_corrector->fromFile( mag_calib_path ) )
+            throw FileException( FileException::DIR_NOT_EXIST, mag_calib_path.c_str() );
+        hdl->m_worker = std::thread( do_pdr, hdl );
     }
     catch ( const PDRException& e )
     {
         if ( hdl )
         {
-            delete hdl->m_mag_calibration;
-            hdl->m_mag_calibration = nullptr;
+            delete hdl->m_loaded_corrector;
+            hdl->m_loaded_corrector = nullptr;
             fm_device_uninit( hdl->m_device_handle );
         }
         std::cerr << "[PDRError:" << e.code() << "] " << e.what() << std::endl;
@@ -581,8 +601,8 @@ int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path
     {
         if ( hdl )
         {
-            delete hdl->m_mag_calibration;
-            hdl->m_mag_calibration = nullptr;
+            delete hdl->m_loaded_corrector;
+            hdl->m_loaded_corrector = nullptr;
             fm_device_uninit( hdl->m_device_handle );
         }
         std::cerr << "[StdError] " << e.what() << std::endl;
@@ -592,8 +612,8 @@ int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path
     {
         if ( hdl )
         {
-            delete hdl->m_mag_calibration;
-            hdl->m_mag_calibration = nullptr;
+            delete hdl->m_loaded_corrector;
+            hdl->m_loaded_corrector = nullptr;
             fm_device_uninit( hdl->m_device_handle );
         }
         std::cerr << "[Unknown Error]" << std::endl;
@@ -819,8 +839,8 @@ int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         hdl->m_status = PDR_STOPPED;
         if ( hdl->m_worker.joinable() )
             hdl->m_worker.join();
-        delete hdl->m_mag_calibration;
-        hdl->m_mag_calibration = nullptr;
+        delete hdl->m_loaded_corrector;
+        hdl->m_loaded_corrector = nullptr;
         fm_device_uninit( hdl->m_device_handle );
 
         // 返回无锁队列中剩余的行人航迹
@@ -844,8 +864,8 @@ void fm_pdr_uninit( PDRHandler* handler )
 
     FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( *handler );
 
-    // 以hdl->m_mag_calibration判断是否为实时PDR模式
-    if ( hdl->m_status != PDR_STOPPED && hdl->m_mag_calibration)
+    // 以hdl->m_loaded_corrector判断是否为实时PDR模式
+    if ( hdl->m_status != PDR_STOPPED && hdl->m_loaded_corrector )
     {
         PDRTrajectoryArray ta;
         fm_pdr_stop( handler, &ta );

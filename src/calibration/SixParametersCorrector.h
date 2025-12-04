@@ -43,7 +43,8 @@ class SixParametersCorrector : public BiasCorrector
 public:
     SixParametersCorrector();
     SixParametersCorrector(Eigen::Vector3f A, Eigen::Vector3f b);
-
+    virtual ~SixParametersCorrector() = default;
+    
     bool fromFile(const std::string& fileName) override;
     bool toFile(const std::string& fileName) override;
 

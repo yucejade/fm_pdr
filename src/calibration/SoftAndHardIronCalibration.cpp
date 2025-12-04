@@ -41,6 +41,11 @@ bool SoftAndHardIronCalibration::feed(const MagnetometerData& data)
 
     Vector3f vector;
     vector << data;
+
+    //check data
+    if (vector[0] > 1000 || vector[1] > 1000 || vector[2] > 1000)
+        return false;
+
     Vector<float, 7> S;
     // cppcheck-suppress constStatement
     S << vector.cwiseProduct(vector), vector, 1;
