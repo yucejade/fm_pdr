@@ -162,6 +162,25 @@
             //"preLaunchTask": "编译C++文件",
         },
         {
+            "name": "获取磁力计原始数据4",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/mag_calib4",
+            "args": [
+                "-t",
+                "-d",
+                "Magnetometer.csv",
+                "-i",
+                "-1"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
             "name": "根据磁力计数据文件做校准4",
             "request": "launch",
             "type": "cppdbg",
