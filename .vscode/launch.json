@@ -168,8 +168,9 @@
             "program": "${workspaceFolder}/build/package/bin/mag_calib4",
             "args": [
                 "-t",
+                0,
                 "-d",
-                "Magnetometer.csv",
+                "./mag_calib_data",
                 "-i",
                 "-1"
             ],
@@ -186,10 +187,12 @@
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/mag_calib4",
             "args": [
+                "-t",
+                "1",
                 "-d",
-                "Magnetometer.csv",
+                "./mag_calib_data/Magnetometer.csv",
                 "-o",
-                "mag_calibration.csv"
+                "./mag_calibration.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/package/bin",
@@ -205,8 +208,9 @@
             "program": "${workspaceFolder}/build/package/bin/mag_calib4",
             "args": [
                 "-t",
+                "2",
                 "-c",
-                "mag_calibration.csv",
+                "./mag_calib_data/mag_calibration.csv",
                 "-i",
                 "-1"
             ],
