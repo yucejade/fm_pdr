@@ -24,7 +24,7 @@ build_thirdparty() {
         # 进入第三方库目录并编译
         # 编译openblas库
         cd thirdparty/OpenBLAS-develop || exit 1
-        cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_TESTING=OFF -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_TESTING=OFF -DNOFORTRAN=ON -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
         make -C ../../build/thirdparty/OpenBLAS-develop install
         cd ../.. || exit 1
 
