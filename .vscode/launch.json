@@ -30,7 +30,7 @@
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-d",
-                "save_sensor_data",
+                "output_sensor_data_test",
                 "-o",
                 "./Trajectory.csv",
                 "-e"
@@ -192,7 +192,7 @@
                 "-d",
                 "./mag_calib_data/Magnetometer.csv",
                 "-o",
-                "./mag_calibration.csv"
+                "./mag_calib_data/mag_calibration.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/package/bin",

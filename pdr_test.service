@@ -1,0 +1,36 @@
+[Unit]
+Description=PDR Test Service
+After=network.target
+ConditionPathExists=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/PDRTest
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kevin/Dev/yuce/fm_pdr/build/package/bin
+User=kevin
+
+# 清理残留文件
+# ExecStartPre=/bin/rm -fr Trajectory.csv output_sensor_data
+
+# 执行模型生成
+ExecStartPre=/bin/bash -c '\
+    if [ ! -f "model.dat" ]; then \
+        echo "Generating model.dat..."; \
+        ./PDRTest -t test_data/train_data -o ./Trajectory.csv; \
+    fi'
+
+# 启动主程序
+ExecStart=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/PDRTest \
+    -x 32.11199920 \
+    -y 118.9528682 \
+    -o ./Trajectory.csv \
+    -r ./output_sensor_data \
+    -e
+
+Restart=always
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
