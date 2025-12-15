@@ -1,0 +1,24 @@
+[Unit]
+Description=PDR Test Service
+After=network.target
+ConditionPathExists=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/switch_wifi.sh
+
+[Service]
+Type=simple
+WorkingDirectory=/home/kevin/Dev/yuce/fm_pdr/build/package/bin
+User=kevin
+
+# 清理残留文件
+# ExecStartPre=/bin/rm -fr Trajectory.csv output_sensor_data
+
+# 启动主程序
+ExecStart=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/switch_wifi.sh
+
+Restart=always
+RestartSec=30s
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
+
