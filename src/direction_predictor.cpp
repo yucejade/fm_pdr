@@ -125,18 +125,18 @@ StartInfo CFmDirectionPredictor::start( const CFmDataManager& start_data, const 
 
     // 计算前least_point个点平均方向作为计算初始direction
     // 计算与北方向的角度（0°=北，90°=东），角度规范化到 [0, 360) 范围
-    const int       sample_count        = std::min( least_point, ( int )data_rows ) - 1;  // 取前least_point段位移
+    Eigen::Vector2d avg_delta( 0, 0 );
     const VectorXd& magnetometer_data_x = start_data.get_pdr_data( PDR_DATA_FIELD_MAG_X );
     const VectorXd& magnetometer_data_y = start_data.get_pdr_data( PDR_DATA_FIELD_MAG_Y );
+    const int       sample_count        = std::min( least_point, ( int )data_rows ) - 1;  // 取前least_point段位移
+    if (sample_count <= 0)
+        throw std::invalid_argument("sample_count must be positive, least_point=" + std::to_string(least_point) + ", data_rows=" + std::to_string(data_rows));
 
-    Eigen::Vector2d avg_delta( 0, 0 );
-
-    for ( int i = 0; i < sample_count; ++i )
-    {
-        avg_delta.x() += magnetometer_data_x[ i + 1 ] - magnetometer_data_x[ i ];
-        avg_delta.y() += magnetometer_data_y[ i + 1 ] - magnetometer_data_y[ i ];
-    }
-    avg_delta /= sample_count;  // 平均位移向量
+    // 平均位移向量
+    VectorXd delta_x = magnetometer_data_x.tail(sample_count) - magnetometer_data_x.head(sample_count);
+    VectorXd delta_y = magnetometer_data_y.tail(sample_count) - magnetometer_data_y.head(sample_count);
+    avg_delta.x() = delta_x.mean();
+    avg_delta.y() = delta_y.mean();
 
     double heading_rad = std::atan2( avg_delta.x(), avg_delta.y() );
     double heading_deg = heading_rad * 180.0 / M_PI;

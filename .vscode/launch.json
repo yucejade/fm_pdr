@@ -30,7 +30,7 @@
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-d",
-                "output_sensor_data_test",
+                "output_sensor_data",
                 "-o",
                 "./Trajectory.csv",
                 "-e"
