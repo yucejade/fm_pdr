@@ -1,23 +1,23 @@
 #define _POSIX_C_SOURCE 200809L
-#define _XOPEN_SOURCE 700
+#define _XOPEN_SOURCE   700
 
 #include "fm_pdr.h"
 #include <getopt.h>
 #include <signal.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <stdatomic.h>
 
 // 全局参数存储
-int   evaluation_value   = 0;
-char* config_dir_value  = ( char* )"../conf";
-char* train_dir_value    = NULL;
-char* dataset_dir_value  = NULL;
-int   x_value            = 0;
-int   y_value            = 0;
-char* output_path_value  = NULL;
-char* raw_data_dir_value = NULL;
+int    evaluation_value   = 0;
+char*  config_dir_value   = ( char* )"../conf";
+char*  train_dir_value    = NULL;
+char*  dataset_dir_value  = NULL;
+double x_value            = 0;
+double y_value            = 0;
+char*  output_path_value  = NULL;
+char*  raw_data_dir_value = NULL;
 
 // 长选项定义
 static struct option long_options[] = {
@@ -67,11 +67,11 @@ int main( int argc, char** argv )
 {
     struct sigaction sa;
     sa.sa_handler = sigterm_handler;
-    sigemptyset(&sa.sa_mask);
+    sigemptyset( &sa.sa_mask );
     sa.sa_flags = SA_RESTART;
-    sigaction(SIGTERM, &sa, NULL);
-    sigaction(SIGINT, &sa, NULL);
-    sigaction(SIGHUP, &sa, NULL);
+    sigaction( SIGTERM, &sa, NULL );
+    sigaction( SIGINT, &sa, NULL );
+    sigaction( SIGHUP, &sa, NULL );
 
     int opt;
     int option_index = 0;
