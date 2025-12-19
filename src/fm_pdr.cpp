@@ -404,9 +404,9 @@ static void do_pdr( FmPDRHandler* hdl )
             Vector3f corrected_vec = hdl->m_loaded_corrector->correct(raw_vec);
 
             // 输出校正结果
-            std::cout << "\n=== 数据校正示例 ===" << std::endl;
-            std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
-            std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
+            // std::cout << "\n=== 数据校正示例 ===" << std::endl;
+            // std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
+            // std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
 
             sensor_data.sensor_data.mag_x[ i ] = corrected_vec[0];
             sensor_data.sensor_data.mag_y[ i ] = corrected_vec[1];
