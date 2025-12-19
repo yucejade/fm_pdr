@@ -1,4 +1,7 @@
 #include "pdr.h"
+#include <Eigen/Dense>
+#include <rapidcsv.h>
+#include <string>
 
 // bool compare_time( double t_val, const PDRPosition& pos );
 
@@ -129,17 +132,67 @@ MatrixXd CFmPDR::linear_interpolation( const VectorXd& target_times, const Matri
     return result;
 }
 
+bool saveTrajectoryToCsv( const Eigen::MatrixXd& matrix, const std::string& filename )
+{
+    // 1. 处理空矩阵
+    if ( matrix.rows() == 0 || matrix.cols() != 4 )
+    {
+        std::cerr << "[Error] 矩阵为空或列数不为4，无法保存！" << std::endl;
+        return false;
+    }
+
+    try
+    {
+        // 2. 初始化CSV文档（默认逗号分隔，UTF-8编码）
+        rapidcsv::Document doc;
+
+        // 3. 设置表头
+        doc.SetColumnName( 0, "time" );
+        doc.SetColumnName( 1, "x" );
+        doc.SetColumnName( 2, "y" );
+        doc.SetColumnName( 3, "direction" );
+
+        // 4. 写入矩阵数据（逐行写入）
+        for ( Eigen::Index row = 0; row < matrix.rows(); ++row )
+        {
+            // 构造当前行的数据（按列顺序）
+            std::vector< std::string > rowData;
+            rowData.reserve( 4 );  // 预分配4列空间
+
+            // 转换Eigen元素为字符串（保留原始精度）
+            rowData.emplace_back( std::to_string( matrix( row, 0 ) ) );  // time
+            rowData.emplace_back( std::to_string( matrix( row, 1 ) ) );  // x
+            rowData.emplace_back( std::to_string( matrix( row, 2 ) ) );  // y
+            rowData.emplace_back( std::to_string( matrix( row, 3 ) ) );  // direction
+
+            // 添加到CSV文档
+            doc.InsertRow( row, rowData );
+        }
+
+        // 5. 保存文件
+        doc.Save( filename );
+        std::cout << "[Info] 轨迹数据已保存到: " << filename << std::endl;
+        return true;
+    }
+    catch ( const std::exception& e )
+    {
+        std::cerr << "[Error] 保存CSV失败: " << e.what() << std::endl;
+        return false;
+    }
+}
+
 MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data )
 {
     Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
     if ( 0 == trajectory.rows() )
         return Eigen::MatrixXd();
 
+    saveTrajectoryToCsv(trajectory, "t1.csv");
     // for ( Eigen::Index i = 0; i < trajectory.rows(); i++ )
     //     cout << "time:" << trajectory( i, 0 ) << ", x:" << trajectory( i, 1 ) << ", y:" << trajectory( i, 2 ) << ", direction:" << trajectory( i, 3 ) << endl;
 
     MatrixXd t;
-    
+
     if ( process_data.have_location_true() )
     {
         size_t          true_data_size = process_data.get_true_data_size();
@@ -155,6 +208,7 @@ MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data 
         t                             = linear_interpolation( time_location, trajectory );
     }
 
+    saveTrajectoryToCsv(trajectory, "t2.csv");
     // cout << "==========================================================================================" << endl;
     // for ( Eigen::Index i = 0; i < t.rows(); i++ )
     //     cout << "time:" << t( i, 0 ) << ", x:" << t( i, 1 ) << ", y:" << t( i, 2 ) << ", direction:" << t( i, 3 ) << endl;
@@ -164,5 +218,6 @@ MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data 
     t.col( 1 ) = t.col( 1 ).array() / kK + start_info.x0;  // 第1列（x）整体缩放+偏移
     t.col( 2 ) = t.col( 2 ).array() / kK + start_info.y0;  // 第2列（y）整体缩放+偏移
 
+    saveTrajectoryToCsv(trajectory, "t2.csv");
     return t;
 }
