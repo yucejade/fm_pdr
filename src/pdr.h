@@ -9,6 +9,7 @@ public:
 
     StartInfo start( double x0, double y0, const CFmDataManager& start_data );
     MatrixXd  pdr( StartInfo& start_info, const CFmDataManager& process_data );
+    bool appendEigenMatrixToCsv( const Eigen::MatrixXd& matrix, const std::string& filename, const std::vector< std::string >& headers = {} );
 private:
     CFmMergeDirectionStep m_merge_direction_step;
 
