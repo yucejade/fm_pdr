@@ -100,5 +100,10 @@ Eigen::MatrixXd CFmMergeDirectionStep::merge_dir_step( StartInfo& start_info, co
         // cout << "time: " << process_data_time[real_peak_indices[i]] << ", x: " << start_info.last_x + dx << ", y: " << start_info.last_y + dy << ", direction: " << mean_direction << endl;
     }
 
+    if (peak_size > 1) {
+        start_info.last_x = trajectory(peak_size - 2, 1);  // 最后一行的x坐标
+        start_info.last_y = trajectory(peak_size - 2, 2);  // 最后一行的y坐标
+    }
+    
     return trajectory;
 }

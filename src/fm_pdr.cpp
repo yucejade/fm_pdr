@@ -353,87 +353,104 @@ static void append_to_csv( const std::string& full_path, const std::vector< std:
     outfile.unsetf( std::ios_base::fixed );
 }
 
-static void do_pdr( FmPDRHandler* hdl )
+static int read_correct_data (FmPDRHandler* hdl, int is_first, SensorData *sensor_data, PDRData *pdr_data)
 {
-    PDRData    pdr_data;
-    SensorData sensor_data;
-    bool       is_first = true;
     const int  count    = hdl->m_config.sample_rate * hdl->m_config.pdr_duration;
     int        ret;
 
-    memset( &pdr_data, 0x00, sizeof( pdr_data ) );
+    ret = fm_device_read( hdl->m_device_handle, is_first, count, 1, sensor_data );
+    if ( ret != 0 )
+    {
+        std::cerr << "Sensor data reading failed." << std::endl;
+        return -1;
+    }
+
+    // 校准磁力计数据
+    for ( int i = 0; i < count; ++i )
+    {
+        const double& timestamp = sensor_data->sensor_data.acc_time[i];
+        const double& mag_x = sensor_data->sensor_data.mag_x[ i ];
+        const double& mag_y = sensor_data->sensor_data.mag_y[ i ];
+        const double& mag_z = sensor_data->sensor_data.mag_z[ i ];
+        MagnetometerData raw_data(timestamp, mag_x, mag_y, mag_z);
+        Vector3f raw_vec(raw_data.magneticFieldX, raw_data.magneticFieldY, raw_data.magneticFieldZ);
+
+        // 计算模长
+        // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+        // std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
+
+        // hdl->m_mag_calibration->Calibration( mag_x, mag_y, mag_z );
+
+        // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
+        // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
+
+        // mag_x *= sensor_data.sensor_data.mag_x[ i ];
+        // mag_y *= sensor_data.sensor_data.mag_y[ i ];
+        // mag_z *= sensor_data.sensor_data.mag_z[ i ];
+
+        // 调用校正方法（公式：校正后 = (原始数据 - 偏移) × 增益）
+        Vector3f corrected_vec = hdl->m_loaded_corrector->correct(raw_vec);
+
+        // 输出校正结果
+        // std::cout << "\n=== 数据校正示例 ===" << std::endl;
+        // std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
+        // std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
+
+        sensor_data->sensor_data.mag_x[ i ] = corrected_vec[0];
+        sensor_data->sensor_data.mag_y[ i ] = corrected_vec[1];
+        sensor_data->sensor_data.mag_z[ i ] = corrected_vec[2];
+    }
+
+
+    // 转换为PDRData结构
+    pdr_data->sensor_data = sensor_data->sensor_data;
+
+    return 0;
+}
+
+static void do_pdr( FmPDRHandler* hdl )
+{
+    SensorData sensor_data;
+    PDRData       pdr_data;
+    bool is_first_data = true;
+    int        ret;
+
     memset( &sensor_data, 0x00, sizeof( sensor_data ) );
+    memset( &pdr_data, 0x00, sizeof( pdr_data ) );
 
     while ( hdl->m_status == PDR_RUNNING )
     {
-        // 使用固定缓存模式读取传感器数据
-        ret = fm_device_read( hdl->m_device_handle, is_first, count, 1, &sensor_data );
-        if ( ret != 0 )
-        {
-            std::cerr << "Sensor data reading failed." << std::endl;
-            continue;
-        }
-
-        // 标记不是第一次读取数据，即不需要再次创建缓存
-        is_first = false;
-
-        // 校准磁力计数据
-        for ( int i = 0; i < count; ++i )
-        {
-            const double& timestamp = sensor_data.sensor_data.acc_time[i];
-            const double& mag_x = sensor_data.sensor_data.mag_x[ i ];
-            const double& mag_y = sensor_data.sensor_data.mag_y[ i ];
-            const double& mag_z = sensor_data.sensor_data.mag_z[ i ];
-            MagnetometerData raw_data(timestamp, mag_x, mag_y, mag_z);
-            Vector3f raw_vec(raw_data.magneticFieldX, raw_data.magneticFieldY, raw_data.magneticFieldZ);
-
-            // 计算模长
-            // double magnitude_before = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-            // std::cout << "校准前数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_before << ")" << std::endl;
-
-            // hdl->m_mag_calibration->Calibration( mag_x, mag_y, mag_z );
-
-            // double magnitude_after = std::sqrt(mag_x * mag_x + mag_y * mag_y + mag_z * mag_z);
-            // std::cout << "校准后数据：(" << mag_x << "," << mag_y << "," << mag_z << "," << magnitude_after << ")" << std::endl;
-
-            // mag_x *= sensor_data.sensor_data.mag_x[ i ];
-            // mag_y *= sensor_data.sensor_data.mag_y[ i ];
-            // mag_z *= sensor_data.sensor_data.mag_z[ i ];
-
-            // 调用校正方法（公式：校正后 = (原始数据 - 偏移) × 增益）
-            Vector3f corrected_vec = hdl->m_loaded_corrector->correct(raw_vec);
-
-            // 输出校正结果
-            // std::cout << "\n=== 数据校正示例 ===" << std::endl;
-            // std::cout << "原始数据: " << raw_vec.transpose() << " μT" << std::endl;
-            // std::cout << "校正后数据: " << corrected_vec.transpose() << ", " << corrected_vec.norm() << " μT" << std::endl;
-
-            sensor_data.sensor_data.mag_x[ i ] = corrected_vec[0];
-            sensor_data.sensor_data.mag_y[ i ] = corrected_vec[1];
-            sensor_data.sensor_data.mag_z[ i ] = corrected_vec[2];
-        }
-
-        // 转换为PDRData结构
-        pdr_data.sensor_data = sensor_data.sensor_data;
-
-        // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
-        if ( hdl->m_sensor_data_path )
-        {
-            int result = fm_pdr_save_pdr_data( ( char* )hdl->m_sensor_data_path, &pdr_data );
-            if ( result != 0 )
-            {
-                std::cerr << "Failed to save data." << std::endl;
-                continue;
-            }
-        }
-
         Eigen::MatrixXd* t = nullptr;
         try
         {
-            // 启动导航
+            // 使用固定缓存模式读取传感器数据
+            ret = read_correct_data (hdl, is_first_data, &sensor_data, &pdr_data);
+            if ( ret != 0)
+            {
+                std::cerr << "Sensor data reading failed." << std::endl;
+                continue;
+            }
+
+            // 将sensor_data数据追加的形式保存到csv文件中，方便调试和验证
+            if ( hdl->m_sensor_data_path )
+            {
+                int ret = fm_pdr_save_pdr_data( ( char* )hdl->m_sensor_data_path, &pdr_data );
+                if ( ret != 0 )
+                {
+                    std::cerr << "Failed to save data." << std::endl;
+                    continue;
+                }
+            }
+
             CFmDataBufferLoader data_loader( hdl->m_config, 0, pdr_data );
-            hdl->m_si = hdl->m_pdr.start( hdl->m_si.x0, hdl->m_si.y0, data_loader );
-            t         = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
+
+            if (is_first_data)
+            {
+                hdl->m_si = hdl->m_pdr.start( hdl->m_si.x0, hdl->m_si.y0, data_loader );
+                is_first_data = false;
+            }
+
+            t = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
             // 导航结果写入无锁队列
             if ( t->rows() > 0 )

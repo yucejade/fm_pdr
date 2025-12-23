@@ -211,7 +211,7 @@ int main( int argc, char** argv )
             // 保存推算出的航迹
             if ( output_path_value )
             {
-                ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", &trajectories_array );
+                ret = fm_pdr_save_trajectory_data( ( char* )output_path_value, &trajectories_array );
                 if ( ret != PDR_RESULT_SUCCESS )
                 {
                     fm_pdr_free_trajectory( &trajectories_array );
@@ -277,7 +277,7 @@ int main( int argc, char** argv )
                 // 保存推算出的航迹
                 if ( output_path_value )
                 {
-                    ret = fm_pdr_save_trajectory_data( ( char* )"Trajectory.csv", &trajectories_array );
+                    ret = fm_pdr_save_trajectory_data( ( char* )output_path_value, &trajectories_array );
                     if ( ret != PDR_RESULT_SUCCESS )
                     {
                         fm_pdr_free_trajectory( &trajectories_array );
