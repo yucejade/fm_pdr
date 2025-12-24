@@ -491,7 +491,7 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
     FmPDRHandler*             h                   = nullptr;
     Eigen::MatrixXd*          train_trajectories  = nullptr;
     PDRTrajectory*            trajs               = nullptr;
-    vector< PDRTrajectory* >* trajectories_vector = new std::vector< PDRTrajectory* >();
+    vector< PDRTrajectory* >* trajectories_vector = nullptr;
 
     try
     {
@@ -500,6 +500,7 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 
         if ( train_file_path )
         {
+            trajectories_vector = new std::vector< PDRTrajectory* >();
             CFmDataFileLoader data_loader( config, ( size_t )-1, train_file_path );
             train_trajectories = new Eigen::MatrixXd();
             h                  = new FmPDRHandler( config, data_loader, *train_trajectories );
@@ -741,6 +742,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 
                 ret += eigenToPDRTrajectory( *predict_trajectories, &trajs );
                 trajectories_vector->push_back( trajs );
+                delete predict_trajectories;
             }
 
             // 转换为C结构体传出

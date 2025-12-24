@@ -183,8 +183,8 @@ MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data 
     if ( 0 == trajectory.rows() )
         return Eigen::MatrixXd();
 
-    std::vector< std::string > customHeaders = { "timestamp", "pos_x", "pos_y", "angle" };
-    appendEigenMatrixToCsv( trajectory, "./t1.csv", customHeaders );
+    //std::vector< std::string > customHeaders = { "timestamp", "pos_x", "pos_y", "angle" };
+    //appendEigenMatrixToCsv( trajectory, "./t1.csv", customHeaders );
     // for ( Eigen::Index i = 0; i < trajectory.rows(); i++ )
     //     cout << "time:" << trajectory( i, 0 ) << ", x:" << trajectory( i, 1 ) << ", y:" << trajectory( i, 2 ) << ", direction:" << trajectory( i, 3 ) << endl;
 
@@ -205,7 +205,7 @@ MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data 
         t                             = linear_interpolation( time_location, trajectory );
     }
 
-    appendEigenMatrixToCsv( t, "./t2.csv", customHeaders );
+    //appendEigenMatrixToCsv( t, "./t2.csv", customHeaders );
     // cout << "==========================================================================================" << endl;
     // for ( Eigen::Index i = 0; i < t.rows(); i++ )
     //     cout << "time:" << t( i, 0 ) << ", x:" << t( i, 1 ) << ", y:" << t( i, 2 ) << ", direction:" << t( i, 3 ) << endl;
@@ -215,6 +215,6 @@ MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data 
     t.col( 1 ) = t.col( 1 ).array() / kK + start_info.x0;  // 第1列（x）整体缩放+偏移
     t.col( 2 ) = t.col( 2 ).array() / kK + start_info.y0;  // 第2列（y）整体缩放+偏移
 
-    appendEigenMatrixToCsv( t, "./t3.csv", customHeaders );
+    //appendEigenMatrixToCsv( t, "./t3.csv", customHeaders );
     return t;
 }
