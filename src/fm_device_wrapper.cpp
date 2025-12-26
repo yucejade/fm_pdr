@@ -28,9 +28,7 @@ int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, i
     if ( ! device_handle.handler || ! data )
         return -1;
 
-    memset( data, 0x00, sizeof( SensorData ) );
-
-    if ( rewrite )
+    if ( ! rewrite )
         fm_device_free_sensor_data( *data );
 
     data->real_length = static_cast< unsigned long >( count > 0 ? count : 1 );

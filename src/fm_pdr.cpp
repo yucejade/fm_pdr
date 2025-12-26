@@ -107,6 +107,7 @@ static void free_trajectory( PDRTrajectory* trajectory ) noexcept
     trajectory->direction = nullptr;
     trajectory->length    = 0;
     delete static_cast< Eigen::MatrixXd* >( trajectory->ptr );
+    delete trajectory;
 }
 
 bool file_exists( const std::string& file_path )
@@ -455,6 +456,8 @@ static void do_pdr( FmPDRHandler* hdl )
             // 导航结果写入无锁队列
             if ( t->rows() > 0 )
                 hdl->queue.enqueue( t );
+            else
+                delete t;
         }
         catch ( const PDRException& e )
         {
@@ -890,8 +893,8 @@ void fm_pdr_uninit( PDRHandler* handler )
         fm_pdr_stop( handler, &ta );
         fm_pdr_free_trajectory( &ta );
     }
-    delete[] hdl->m_config.model_name;
-    delete[] hdl->m_config.model_file_name;
+    free( hdl->m_config.model_name );
+    free( hdl->m_config.model_file_name );
     delete hdl->m_data_loader;
     free( hdl->m_sensor_data_path );
     delete hdl;

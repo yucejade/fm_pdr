@@ -7,6 +7,8 @@ using namespace rapidcsv;
 CFmDataManager::CFmDataManager( DataType type ) : m_config( nullptr ), m_data_type( type ), m_train_data_size( 0 ) {}
 CFmDataManager::CFmDataManager( const PDRConfig& config, DataType type, size_t train_data_size ) : m_config( &config ), m_data_type( type ), m_train_data_size( train_data_size )
 {
+    memset(&m_offset, 0x00, sizeof(m_offset));
+    memset(&m_ahrs, 0x00, sizeof(m_ahrs));
     FusionOffsetInitialise( &m_offset, config.sample_rate );
     FusionAhrsInitialise( &m_ahrs );
 
