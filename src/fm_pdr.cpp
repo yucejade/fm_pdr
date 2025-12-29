@@ -750,7 +750,6 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 
                 ret += eigenToPDRTrajectory( *predict_trajectories, &trajs );
                 trajectories_vector->push_back( trajs );
-                delete predict_trajectories;
             }
 
             // 转换为C结构体传出
