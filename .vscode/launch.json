@@ -202,7 +202,7 @@
             //"preLaunchTask": "编译C++文件",
         },
         {
-            "name": "实时磁力计数据做校准4",
+            "name": "展示校准后的实时磁力计数据4",
             "request": "launch",
             "type": "cppdbg",
             "program": "${workspaceFolder}/build/package/bin/mag_calib4",
