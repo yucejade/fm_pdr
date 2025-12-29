@@ -50,6 +50,7 @@ bool CFmDeviceWrapper::ReadData( SensorData& sensor_data, unsigned long index, b
     float                  x, y, z;
     const double           gravity = 9.8035f;
 
+    memset(&imu_event, 0x00, sizeof(imu_event));
     m_sensor_imu.getDataFromRegisters( imu_event );
 
     sensor_data.sensor_data.acc_time[ index ] = duration;

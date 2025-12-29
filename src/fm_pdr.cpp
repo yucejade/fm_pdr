@@ -178,20 +178,25 @@ void allocate_sensor_arrays( PDRSensorData* sensor_data, int length )
     if ( length <= 0 )
         return;
 
-    sensor_data->acc_time = new double[ length ];
-    sensor_data->acc_x    = new double[ length ];
-    sensor_data->acc_y    = new double[ length ];
-    sensor_data->acc_z    = new double[ length ];
+    sensor_data->acc_time = new double[ length ]();
+    sensor_data->acc_x    = new double[ length ]();
+    sensor_data->acc_y    = new double[ length ]();
+    sensor_data->acc_z    = new double[ length ]();
 
-    sensor_data->gyr_time = new double[ length ];
-    sensor_data->gyr_x    = new double[ length ];
-    sensor_data->gyr_y    = new double[ length ];
-    sensor_data->gyr_z    = new double[ length ];
+    sensor_data->lacc_time = new double[ length ]();
+    sensor_data->lacc_x    = new double[ length ]();
+    sensor_data->lacc_y    = new double[ length ]();
+    sensor_data->lacc_z    = new double[ length ]();
 
-    sensor_data->mag_time = new double[ length ];
-    sensor_data->mag_x    = new double[ length ];
-    sensor_data->mag_y    = new double[ length ];
-    sensor_data->mag_z    = new double[ length ];
+    sensor_data->gyr_time = new double[ length ]();
+    sensor_data->gyr_x    = new double[ length ]();
+    sensor_data->gyr_y    = new double[ length ]();
+    sensor_data->gyr_z    = new double[ length ]();
+
+    sensor_data->mag_time = new double[ length ]();
+    sensor_data->mag_x    = new double[ length ]();
+    sensor_data->mag_y    = new double[ length ]();
+    sensor_data->mag_z    = new double[ length ]();
 
     sensor_data->length = length;
 }
@@ -201,14 +206,14 @@ void allocate_true_arrays( PDRTrueData* true_data, int length )
     if ( length <= 0 )
         return;
 
-    true_data->time_location       = new double[ length ];
-    true_data->latitude            = new double[ length ];
-    true_data->longitude           = new double[ length ];
-    true_data->height              = new double[ length ];
-    true_data->velocity            = new double[ length ];
-    true_data->direction           = new double[ length ];
-    true_data->horizontal_accuracy = new double[ length ];
-    true_data->vertical_accuracy   = new double[ length ];
+    true_data->time_location       = new double[ length ]();
+    true_data->latitude            = new double[ length ]();
+    true_data->longitude           = new double[ length ]();
+    true_data->height              = new double[ length ]();
+    true_data->velocity            = new double[ length ]();
+    true_data->direction           = new double[ length ]();
+    true_data->horizontal_accuracy = new double[ length ]();
+    true_data->vertical_accuracy   = new double[ length ]();
 
     true_data->length = length;
 }
