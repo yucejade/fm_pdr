@@ -28,9 +28,16 @@ CFmStepPredictor::CFmStepPredictor( const PDRConfig& config, const CFmDataManage
     }
 }
 
-CFmStepPredictor::CFmStepPredictor( const PDRConfig& config ) : m_config( config ) {}
+CFmStepPredictor::CFmStepPredictor( const PDRConfig& config ) : m_config( config ), m_train_data( nullptr ) {}
 
-CFmStepPredictor::~CFmStepPredictor() {}
+CFmStepPredictor::~CFmStepPredictor()
+{
+    if ( m_train_data )
+    {
+        delete m_train_data;
+        m_train_data = nullptr;
+    }
+}
 
 Eigen::VectorXd CFmStepPredictor::filter( int range, const Eigen::VectorXd& data )
 {

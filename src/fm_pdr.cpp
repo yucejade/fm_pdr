@@ -46,11 +46,11 @@ typedef struct _FmPDRHandler
     moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
-    _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position ) : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position ) : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector(nullptr), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
-    _FmPDRHandler( const PDRConfig& config ) : m_config( config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config ) : m_config( config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector(nullptr), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
