@@ -1,4 +1,5 @@
 #include "device_wrapper.h"
+#include <memory.h>
 #include <chrono>
 #include <cstdint>
 #include <thread>
