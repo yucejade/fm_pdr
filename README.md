@@ -111,7 +111,7 @@ build/package/
 | `butter_wn` | 0.0035 | 巴特沃斯滤波器截止频率 |
 | `least_start_point` | 50 | 最少起始点数 |
 
-这些配置项通常通过`conf/config.json`文件进行调整，也可以在程序运行时通过相应参数进行设置。
+这些配置项通常通过`conf/config.json`文件进行调整。
 
 ## API文档
 请参考package/docs目录
