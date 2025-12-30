@@ -112,4 +112,7 @@ build/package/
 这些配置项通常通过`conf/config.json`文件进行调整。
 
 ## API文档
-请参考package/docs目录
+请参考package/docs目录和fm_pdr.h头文件
+
+## 使用示例
+请参考源码example/plain_c/main.c文件
