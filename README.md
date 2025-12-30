@@ -1,5 +1,3 @@
-# Main Page {#mainpage}
-
 # PDR算法库
 
 ## 项目概述
