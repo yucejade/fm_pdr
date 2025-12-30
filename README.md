@@ -3,7 +3,7 @@
 # PDR算法库
 
 ## 项目概述
-
+本项目基于树莓派5硬件平台，结合TDK40607P(IMU)和MMC56x3磁力计，采用行人航迹跟踪(PDR)方式实现惯性导航功能和程序演示。
 本项目参考了[NJU-AML2022的PDR项目](https://github.com/nju-aml2022/Pedestrian-Dead-Reckoning-PDR/tree/main#)，并将其从Python环境移植到C++语言环境中。
 
 ## 主要特性
@@ -27,6 +27,21 @@
 ### 接入传感器实时预测航迹
 ```bash
 ./PDRTest -x 32.11199920 -y 118.9528682 --output-path "./Trajectory.csv"
+```
+
+### 获取磁力计原始数据
+```bash
+./mag_calib4 -t 0 -d "./mag_calib_data" -i -1
+```
+
+### 根据磁力计数据文件生成校准参数
+```bash
+./mag_calib4 -t 1 -d "./mag_calib_data/Magnetometer.csv" -o "./mag_calib_data/mag_calibration.csv"
+```
+
+### 展示校准前后的实时磁力计数据
+```bash
+./mag_calib4 -t 2 -c "./mag_calib_data/mag_calibration.csv" -i -1
 ```
 
 ## 编译构建
@@ -65,6 +80,38 @@ build/package/
 - RapidJSON: JSON解析库
 - Libgpiod: GPIO设备控制库
 - ConcurrentQueue: 并发队列库
+
+## 集成说明
+编译后，在include目录下生成fm_pdr.h头文件，lib目录下生成libpdr.a库文件用于提供给第三方集成。
+本算法大致工作过程如下：
+- 准备阶段
+    1. 采集传感器原始数据
+    2. 校准磁力计数据，并将校准结果以文件形式输出
+    3. 算法模型训练，并将训练结果以文件形式输出
+- 行人航迹预测(PDR)
+    1. 输入内容为配置文件，原始传感器数据，磁力计校准结果，模型训练结果
+    2. 根据输入内容结合PDR算法预测行人位置和方向
+
+
+### 配置文件说明
+
+| 参数名 | 默认值 | 说明 |
+|--------|--------|------|
+| `sample_rate` | 50 | 采样频率（Hz） |
+| `pdr_duration` | 4 | PDR持续时间（秒） |
+| `model_name` | "Linear" | 使用的模型名称 |
+| `model_file_name` | "model.dat" | 模型文件名 |
+| `clean_start` | 4 | 开始清理的点数 |
+| `clean_end` | 0 | 结束清理的点数 |
+| `default_east_point` | 50 | 默认东向点 |
+| `move_average` | 10 | 移动平均窗口大小 |
+| `min_distance` | 20 | 最小距离（米） |
+| `distance_frac_step` | 4.0 | 距离分数步长 |
+| `optimized_mode_ratio` | 0.95 | 优化模式比例 |
+| `butter_wn` | 0.0035 | 巴特沃斯滤波器截止频率 |
+| `least_start_point` | 50 | 最少起始点数 |
+
+这些配置项通常通过`conf/config.json`文件进行调整，也可以在程序运行时通过相应参数进行设置。
 
 ## API文档
 请参考package/docs目录
