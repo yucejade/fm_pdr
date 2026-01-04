@@ -3,6 +3,7 @@
 #include <stdexcept>
 #include <string>
 
+
 /// @class PDRException
 /// @brief 所有PDR异常的基类（支持错误码+详细信息）
 class PDRException : public std::runtime_error
@@ -10,6 +11,17 @@ class PDRException : public std::runtime_error
 public:
     using Code = int;
 
+    enum SubCode
+    {    
+        UNKNOWN                = PDRResult::PDR_RESULT_UNKNOWN,
+        GENERAL_ERROR          = PDRResult::PDR_RESULT_GENERAL_ERROR,
+        DEVICE_INIT_ERROR      = PDRResult::PDR_RESULT_DEVICE_INIT_ERROR,
+        CALL_ERROR             = PDRResult::PDR_RESULT_CALL_ERROR,
+        ALREADY_RUNNING        = PDRResult::PDR_RESULT_ALREADY_RUNNING,
+        PARAMETER_ERROR        = PDRResult::PDR_RESULT_PARAMETER_ERROR,
+        NONE                   = PDRResult::PDR_RESULT_NONE,
+        SUCCESS                = PDRResult::PDR_RESULT_SUCCESS,
+    };
     PDRException( Code code, const std::string& msg ) : std::runtime_error( msg ), m_code( code ) {}
 
     Code code() const noexcept

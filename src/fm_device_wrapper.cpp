@@ -13,8 +13,10 @@ int fm_device_init( int sample_rate, fm_device_handle_t* device_handle )
 
     try
     {
-        device_handle->handler     = new CFmDeviceWrapper( sample_rate );
-        device_handle->sample_rate = sample_rate;
+        *device_handle = new FmDeviceHandle();
+
+        (*device_handle)->handler     = new CFmDeviceWrapper( sample_rate );
+        (*device_handle)->sample_rate = sample_rate;
         return 0;
     }
     catch ( const std::invalid_argument& e )
@@ -25,7 +27,7 @@ int fm_device_init( int sample_rate, fm_device_handle_t* device_handle )
 
 int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, int rewrite, SensorData* data )
 {
-    if ( ! device_handle.handler || ! data )
+    if ( ! device_handle->handler || ! data )
         return -1;
 
     if ( ! rewrite )
@@ -65,7 +67,7 @@ int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, i
     if ( ! data->sensor_data.mag_z )
         data->sensor_data.mag_z = new double[ data->real_length ]();
 
-    CFmDeviceWrapper* wrapper = static_cast< CFmDeviceWrapper* >( device_handle.handler );
+    CFmDeviceWrapper* wrapper = static_cast< CFmDeviceWrapper* >( device_handle->handler );
     for (unsigned long i = 0; i < data->real_length; ++i)
     {
         int64_t timestamp = 0;
@@ -74,8 +76,8 @@ int fm_device_read( fm_device_handle_t device_handle, int is_first, int count, i
         is_first = 0;
         
         int64_t time_consuming = wrapper->GetMicrosecondTimestamp() - timestamp;
-        int64_t target_time = 1000000 / device_handle.sample_rate;
-        std::this_thread::sleep_for(std::chrono::microseconds(device_handle.sample_rate > 0 ? (target_time - time_consuming) : 0));
+        int64_t target_time = 1000000 / device_handle->sample_rate;
+        std::this_thread::sleep_for(std::chrono::microseconds(device_handle->sample_rate > 0 ? (target_time - time_consuming) : 0));
     }
 
     return 0;
@@ -168,9 +170,10 @@ void fm_device_free_sensor_data( SensorData data )
 
 void fm_device_uninit( fm_device_handle_t device_handle )
 {
-    if ( device_handle.handler )
+    if ( device_handle && device_handle->handler )
     {
-        delete static_cast< CFmDeviceWrapper* >( device_handle.handler );
-        device_handle.handler = nullptr;
+        delete static_cast< CFmDeviceWrapper* >( device_handle->handler );
+        device_handle->handler = nullptr;
+        delete device_handle;
     }
 }

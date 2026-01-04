@@ -16,11 +16,13 @@ typedef struct _SensorData
     unsigned long real_length;  ///< 表示实际缓存大小
 } SensorData;
 
-typedef struct _fm_device_handle_t
+typedef struct _FmDeviceHandle
 {
     void* handler;      ///< 设备句柄
     int   sample_rate;  ///< 采样率
-} fm_device_handle_t;
+} FmDeviceHandle;
+
+typedef FmDeviceHandle* fm_device_handle_t;
 
 /// @fn int fm_device_init( int sample_rate, fm_device_handle_t *device_handle )
 /// @brief 初始化设备

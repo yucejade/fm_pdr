@@ -156,7 +156,7 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 /// @return 无
 int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path );
 
-/// @fn void fm_pdr_start_with_file( PDRHandler* handler, char *sensor_file_dpath )
+/// @fn void fm_pdr_start_with_file( PDRHandler* handler, char *sensor_file_path )
 /// @brief 基于记录在文件中的传感器数据，开始导航
 /// @param handler [in] PDR句柄
 /// @param sensor_file_path [in] 记录行进数据目录的路径
@@ -211,6 +211,13 @@ int fm_pdr_get_config( PDRHandler handler, PDRConfig* config );
 /// @return 0: 保存成功；!=0: 保存失败
 int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectories_array );
 
+/// @fn int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
+/// @brief 保存传感器数据，函数可以重复调用，每次追加写入数据
+/// @param dir_path [in] 保存文件路径
+/// @param pdr_data [in] PDR数据指针
+/// @return 0: 保存成功；!=0: 保存失败
+int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data );
+
 // TODO:改为私有函数
 /// @fn int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data )
 /// @brief 读取dir_path目录传感器数据到PDRData结构体中
@@ -225,14 +232,6 @@ int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data );
 /// @param pdr_data [in] PDR数据指针
 /// @return 无
 void fm_pdr_free_pdr_data( PDRData* pdr_data );
-
-// TODO:改为私有函数
-/// @fn int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data )
-/// @brief 保存传感器数据，函数可以重复调用，每次追加写入数据
-/// @param dir_path [in] 保存文件路径
-/// @param pdr_data [in] PDR数据指针
-/// @return 0: 保存成功；!=0: 保存失败
-int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data );
 
 #ifdef __cplusplus
 }
