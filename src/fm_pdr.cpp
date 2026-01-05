@@ -500,24 +500,22 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
     if ( ! train_file_path && trajectories_array )
         return PDRException::PARAMETER_ERROR;
 
-    std::unique_ptr< FmPDRHandler >                                            h;
-    std::unique_ptr< Eigen::MatrixXd >                                         train_trajectories;
-    std::unique_ptr< std::vector< PDRTrajectory* > >                           trajectories_vector;
     PDRTrajectory*                                                             trajs = nullptr;
     int                                                                        ret   = PDRException::SUCCESS;
     std::unique_ptr< PDRTrajectoryArray, decltype( &fm_pdr_free_trajectory ) > trajectories_guard( trajectories_array, fm_pdr_free_trajectory );
 
     try
     {
-        const string& config_path = string( config_dir ) + "//" + "config.json";
-        PDRConfig     config      = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
+        const string&                   config_path = string( config_dir ) + "//" + "config.json";
+        PDRConfig                       config      = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
+        std::unique_ptr< FmPDRHandler > h;
 
         if ( train_file_path )
         {
-            CFmDataFileLoader data_loader( config, ( size_t )-1, train_file_path );
-            trajectories_vector = std::make_unique< std::vector< PDRTrajectory* > >();
-            train_trajectories  = std::make_unique< Eigen::MatrixXd >();
-            h                   = std::make_unique< FmPDRHandler >( config, data_loader, *train_trajectories );
+            CFmDataFileLoader                                data_loader( config, ( size_t )-1, train_file_path );
+            std::unique_ptr< std::vector< PDRTrajectory* > > trajectories_vector = std::make_unique< std::vector< PDRTrajectory* > >();
+            Eigen::MatrixXd*                                 train_trajectories  = new Eigen::MatrixXd();
+            h                                                                    = std::make_unique< FmPDRHandler >( config, data_loader, *train_trajectories );
 
             if ( trajectories_array )
             {
@@ -676,12 +674,13 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
     if ( ! handler || ! trajectories_array )
         return PDRException::PARAMETER_ERROR;
 
-    int ret = PDRException::SUCCESS;
+    int ret                  = PDRException::SUCCESS;
     using TrajectoryVecGuard = std::unique_ptr< std::vector< PDRTrajectory* >, decltype( &free_trajectory_vector ) >;
-    TrajectoryVecGuard                 trajectories_vector_guard( new std::vector< PDRTrajectory* >(),  // 初始化时分配vector
-                                                                  free_trajectory_vector                // 自定义删除器
-                    );
-    std::unique_ptr< Eigen::MatrixXd > predict_trajectories_guard;
+    TrajectoryVecGuard trajectories_vector_guard( new std::vector< PDRTrajectory* >(),  // 初始化时分配vector
+                                                  free_trajectory_vector                // 自定义删除器
+    );
+    Eigen::MatrixXd*   predict_trajectories = nullptr;
+    PDRTrajectory*     trajs                = nullptr;
 
     try
     {
@@ -690,9 +689,8 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         // 根据是否创建设备句柄判断PDR模式
         if ( ! hdl->m_device_handle->handler )
         {
-            predict_trajectories_guard.reset( new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) ) );
-            PDRTrajectory* trajs = nullptr;
-            ret = eigenToPDRTrajectory( *predict_trajectories_guard, &trajs );
+            predict_trajectories = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
+            ret                  = eigenToPDRTrajectory( *predict_trajectories, &trajs );
             trajectories_vector_guard->push_back( trajs );
 
             trajectories_array->array = trajectories_vector_guard->data();
@@ -703,15 +701,11 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         {
             while ( true )
             {
-                Eigen::MatrixXd* temp_matrix = nullptr;
-                bool             is_ok       = hdl->queue.try_dequeue( temp_matrix );
+                bool is_ok = hdl->queue.try_dequeue( predict_trajectories );
                 if ( ! is_ok )
                     break;
 
-                // 用智能指针管理单次取出的矩阵
-                std::unique_ptr< Eigen::MatrixXd > temp_guard( temp_matrix );
-                PDRTrajectory* trajs = nullptr;
-                ret += eigenToPDRTrajectory( *temp_guard, &trajs );
+                ret += eigenToPDRTrajectory( *predict_trajectories, &trajs );
                 trajectories_vector_guard->push_back( trajs );
             }
 
