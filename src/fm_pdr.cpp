@@ -646,7 +646,7 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path )
         double x0 = 32.11199920;
         double y0 = 118.9528682;
 
-        hdl->m_si               = hdl->m_pdr.start( x0, y0, *hdl->m_data_loader );
+        hdl->m_si               = hdl->m_pdr.start( x0, y0, *data_loader_guard );
         hdl->m_data_loader      = data_loader_guard.release();
         hdl->m_sensor_data_path = sensor_path_guard.release();
         hdl->m_status           = PDR_RUNNING;
@@ -687,7 +687,7 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         FmPDRHandler* hdl = reinterpret_cast< FmPDRHandler* >( handler );
 
         // 根据是否创建设备句柄判断PDR模式
-        if ( ! hdl->m_device_handle->handler )
+        if ( ! hdl->m_device_handle )
         {
             predict_trajectories = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
             ret                  = eigenToPDRTrajectory( *predict_trajectories, &trajs );
