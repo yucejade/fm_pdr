@@ -152,7 +152,7 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 /// @brief 基于传感器数据，开始导航
 /// @param handler [in] PDR句柄
 /// @param start_point [in] 起点经纬度数据，不可为空
-/// @param pdr_data [in] 传感器数据，用于确定初始行进方向，建议设置3秒以上传感器数据，pdr_data中的真实数据(true_data)可以为NULL
+/// @param raw_data_path [in] 保存传感器数据的路径，用于调试需要，可以设置为NULL不保留原始数据
 /// @return 无
 int fm_pdr_start( PDRHandler handler, PDRPoint* start_point, char* raw_data_path );
 
