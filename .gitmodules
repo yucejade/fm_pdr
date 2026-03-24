@@ -1,0 +1,21 @@
+[submodule "thirdparty/fmm/PROJ"]
+	path = thirdparty/fmm/PROJ
+	url = https://github.com/OSGeo/PROJ.git
+[submodule "thirdparty/fmm/curl"]
+	path = thirdparty/fmm/curl
+	url = https://github.com/curl/curl.git
+[submodule "thirdparty/fmm/gdal"]
+	path = thirdparty/fmm/gdal
+	url = https://github.com/OSGeo/gdal.git
+[submodule "thirdparty/fmm/geos"]
+	path = thirdparty/fmm/geos
+	url = https://github.com/libgeos/geos.git
+[submodule "thirdparty/fmm/libminizip-cmake"]
+	path = thirdparty/fmm/libminizip-cmake
+	url = https://github.com/cai880210/libminizip-cmake.git
+[submodule "thirdparty/fmm/openssl"]
+	path = thirdparty/fmm/openssl
+	url = https://github.com/openssl/openssl.git
+[submodule "thirdparty/fmm/readline"]
+	path = thirdparty/fmm/readline
+	url = https://git.savannah.gnu.org/git/readline.git
