@@ -20,6 +20,9 @@ build_thirdparty() {
         mkdir -p ./build/package/bin/
         mkdir -p ./build/package/lib/
         mkdir -p ./build/package/include/
+        PACKAGE_PATH=${PWD}/build/package
+        BUILD_TRIPLET=$(gcc -dumpmachine)
+        export LD_LIBRARY_PATH=${PACKAGE_PATH}/lib
 
         # 进入第三方库目录并编译
         # 编译openblas库
@@ -86,6 +89,95 @@ build_thirdparty() {
         make -C ../../build/thirdparty/concurrentqueue-master install
         cd ../.. || exit 1
 
+        ### 编译fmm依赖库
+        # 编译readline库
+        mkdir -p build/thirdparty/fmm//ncurses-6.6 && cd build/thirdparty/fmm//ncurses-6.6 || exit 1
+        ../../../../thirdparty/fmm//ncurses-6.6/configure --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        make install
+        cd ../../../.. || exit 1
+
+        # 编译readline库
+        mkdir -p build/thirdparty/fmm/readline && cd build/thirdparty/fmm/readline || exit 1
+        ../../../../thirdparty/fmm/readline/configure --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        make install
+        cd ../../../.. || exit 1
+
+        # 编译sqlite库
+        mkdir -p build/thirdparty/fmm/sqlite-src-3510300 && cd build/thirdparty/fmm/sqlite-src-3510300 || exit 1
+        ../../../../thirdparty/fmm/sqlite-src-3510300/configure CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        make install
+        cd ../../../.. || exit 1
+
+        # 编译libminizip库
+        cd thirdparty/fmm/libminizip-cmake || exit 1
+        cmake -B ../../../build/thirdparty/fmm/libminizip-cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
+        make -C ../../../build/thirdparty/fmm/libminizip-cmake install
+        cd ../../.. || exit 1
+
+        # 编译libtiff库
+        cd thirdparty/fmm/libtiff-master || exit 1
+        cmake -B ../../../build/thirdparty/fmm/libtiff-master -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
+        make -C ../../../build/thirdparty/fmm/libtiff-master install
+        cd ../../.. || exit 1
+
+        # 编译geos库
+        cd thirdparty/fmm/geos || exit 1
+        cmake -B ../../../build/thirdparty/fmm/geos -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
+        make -C ../../../build/thirdparty/fmm/geos install
+        cd ../../.. || exit 1
+
+        # 编译PROJ库
+        cd thirdparty/fmm/PROJ || exit 1
+        cmake -B ../../../build/thirdparty/fmm/PROJ -DEXE_SQLITE3=../../../build/package/bin/sqlite3 -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -S .
+        make -C ../../../build/thirdparty/fmm/PROJ install
+        cd ../../.. || exit 1
+
+        # 编译libspatialite库
+        mkdir -p build/thirdparty/fmm/libspatialite-5.1.0 && cd build/thirdparty/fmm/libspatialite-5.1.0 || exit 1
+        if [ -f "thirdparty/fmm/libspatialite-5.1.0/src/headers/spatialite/gaiaconfig.h" ]; then
+            rm thirdparty/fmm/libspatialite-5.1.0/src/headers/spatialite/gaiaconfig.h
+        fi
+        ../../../../thirdparty/fmm/libspatialite-5.1.0/configure --enable-freexl=no --enable-rttopo=no --with-geosconfig=${PACKAGE_PATH}/bin/geos-config CFLAGS="-I${PACKAGE_PATH}/include" LDFLAGS="-L${PACKAGE_PATH}/lib" LIBS="-lreadline -lncurses -lgeos_c -lgeos -lproj -lsqlite3 -ltiff -lstdc++ -lpthread -lm -ldl" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        make install
+        cd ../../../.. || exit 1
+
+        # 编译openssl库
+        mkdir -p build/thirdparty/fmm/openssl && cd build/thirdparty/fmm/openssl || exit 1
+        ARCH=$(uname -m)
+        case "$ARCH" in
+            x86_64)
+                OPENSSL_TARGET="linux-x86_64"
+                ;;
+            aarch64|arm64)
+                OPENSSL_TARGET="linux-aarch64"
+                ;;
+            *)
+                echo "不支持的架构: $ARCH"
+                exit 1
+                ;;
+        esac
+        ../../../../thirdparty/fmm/openssl/Configure ${OPENSSL_TARGET} --prefix=${PACKAGE_PATH} --openssldir=${PACKAGE_PATH} shared zlib
+        make install
+        cd ../../../.. || exit 1
+
+        # 编译curl库
+        cd thirdparty/fmm/curl || exit 1
+        cmake -B ../../../build/thirdparty/fmm/curl -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DCURL_USE_LIBPSL=OFF -DUSE_LIBIDN2=OFF -DUSE_NGHTTP2=OFF -S .
+        make -C ../../../build/thirdparty/fmm/curl install
+        cd ../../.. || exit 1
+
+        # 编译gdal库
+        cd thirdparty/fmm/gdal || exit 1
+        cmake -B ../../../build/thirdparty/fmm/gdal -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DGDAL_ENABLE_DRIVER_GRIB=OFF -DGDAL_USE_ZSTD=OFF -DCMAKE_BUILD_TYPE=release -S .
+        make -C ../../../build/thirdparty/fmm/gdal install
+        cd ../../.. || exit 1
+
+        # 编译fmm库
+        cd thirdparty/fmm/fmm || exit 1
+        cmake -B ../../../build/thirdparty/fmm/fmm -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package-DCMAKE_BUILD_TYPE=release -S .
+        make -C ../../../build/thirdparty/fmm/fmm install
+        cd ../../.. || exit 1
+
         echo "Thirdparty build completed."
     else
         echo "thirdparty directory not found, build failed."
@@ -105,8 +197,8 @@ build_pdr() {
         make -C ../build/src install
         cd .. || exit 1
 
-	doxygen Doxyfile
-	rm build/package/docs -fr && mv -f docs build/package
+    doxygen Doxyfile
+    rm build/package/docs -fr && mv -f docs build/package
 
         echo "PDR build completed."
     else
