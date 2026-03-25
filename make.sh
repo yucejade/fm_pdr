@@ -23,6 +23,7 @@ build_thirdparty() {
         PACKAGE_PATH=${PWD}/build/package
         BUILD_TRIPLET=$(gcc -dumpmachine)
         export LD_LIBRARY_PATH=${PACKAGE_PATH}/lib
+        export PKG_CONFIG_PATH=/home/kevin/fm_pdr/build/package/lib/pkgconfig:$PKG_CONFIG_PATH
 
         # 进入第三方库目录并编译
         # 编译openblas库
@@ -133,6 +134,10 @@ build_thirdparty() {
         cd ../../.. || exit 1
 
         # 编译libspatialite库
+        cd thirdparty/fmm/libspatialite-5.1.0 || exit 1
+        wget -O config.guess 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.guess;hb=HEAD'
+        wget -O config.sub 'https://git.savannah.gnu.org/gitweb/?p=config.git;a=blob_plain;f=config.sub;hb=HEAD'
+        cd ../../.. || exit 1
         mkdir -p build/thirdparty/fmm/libspatialite-5.1.0 && cd build/thirdparty/fmm/libspatialite-5.1.0 || exit 1
         if [ -f "thirdparty/fmm/libspatialite-5.1.0/src/headers/spatialite/gaiaconfig.h" ]; then
             rm thirdparty/fmm/libspatialite-5.1.0/src/headers/spatialite/gaiaconfig.h
@@ -197,8 +202,8 @@ build_pdr() {
         sudo make -C ../build/src install
         cd .. || exit 1
 
-    doxygen Doxyfile
-    rm build/package/docs -fr && mv -f docs build/package
+        doxygen Doxyfile
+        rm build/package/docs -fr && mv -f docs build/package
 
         echo "PDR build completed."
     else
