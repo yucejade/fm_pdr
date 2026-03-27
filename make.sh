@@ -174,16 +174,16 @@ build_thirdparty() {
 
         # 编译gdal库
         cd thirdparty/fmm/gdal || exit 1
-        cmake -B ../../../build/thirdparty/fmm/gdal -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DGDAL_USE_CURL=OFF -DGDAL_USE_SPATIALITE=OFF -DGDAL_ENABLE_DRIVER_GRIB=OFF -DGDAL_USE_ZSTD=OFF -DPROJ_DIR=${PACKAGE_PATH}/lib/camke/proj -DCMAKE_BUILD_TYPE=release -S .
+        cmake -B ../../../build/thirdparty/fmm/gdal -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DGDAL_USE_CURL=OFF -DGDAL_USE_SPATIALITE=OFF -DGDAL_ENABLE_DRIVER_GRIB=OFF -DGDAL_USE_ZSTD=OFF -DPROJ_DIR=${PACKAGE_PATH}/lib/cmake/proj -DCMAKE_BUILD_TYPE=release -S .
         sudo make -C ../../../build/thirdparty/fmm/gdal install
         cd ../../.. || exit 1
 
         # 编译fmm库
         cd thirdparty/fmm/fmm-master || exit 1
-        cmake -B ../../../build/thirdparty/fmm/fmm-master -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package-DCMAKE_BUILD_TYPE=release -S .
+        cmake -B ../../../build/thirdparty/fmm/fmm-master -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DCMAKE_BUILD_TYPE=release -DFMM_INSTALL_HEADER=yes -S .
         sudo make -C ../../../build/thirdparty/fmm/fmm-master install
         cd ../../.. || exit 1
-
+ 
         echo "Thirdparty build completed."
     else
         echo "thirdparty directory not found, build failed."
