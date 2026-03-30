@@ -58,6 +58,62 @@ size_t CFmPDR::find_interval( double t, const MatrixXd& trajectory ) const
     return n - 2;
 }
 
+/**
+ * 根据原有时间戳列生成新的采样时间戳序列
+ * @param original_times 原始trajectory的时间戳列 (VectorXd)
+ * @return 重新采样后的时间戳序列 (VectorXd)
+ */
+VectorXd CFmPDR::generate_target_times(const VectorXd& original_times)
+{
+    // 如果为空或只有一个点，直接返回
+    if (original_times.size() == 0) return VectorXd();
+    if (original_times.size() == 1) return original_times;
+
+    double t_start = original_times(0);
+    double t_end = original_times(original_times.size() - 1);
+    double duration = t_end - t_start;
+
+    // 如果时间跨度为0（防止除0或死循环），直接返回
+    if (duration <= 1e-6) return original_times;
+
+    std::vector<double> new_times;
+    new_times.reserve(100); // 预分配内存
+
+    // a. trajectory的时间戳（即总时长）如果小于或等于 5 * 100 秒 (500秒)
+    if (duration <= 500.0) 
+    {
+        new_times.push_back(t_start); // c. 保留第一个时间戳
+        double current_t = t_start + 5.0;
+        
+        // 每5秒转换一个，最多保留100个点。
+        // 为了给最后一个时间戳(t_end)预留1个位置，循环添加的点数不得超过99个。
+        // current_t < t_end - 1e-3 防止浮点精度导致加入一个极度接近 t_end 的点。
+        while (current_t < t_end - 1e-3 && new_times.size() < 99) 
+        {
+            new_times.push_back(current_t);
+            current_t += 5.0;
+        }
+        
+        new_times.push_back(t_end); // c. 保留最后一个时间戳
+    }
+    // b. trajectory的时间戳如果大于 5 * 100 秒
+    else 
+    {
+        int num_points = 100; // 固定转换100个时间戳
+        double step = duration / (num_points - 1); // 计算步长（99段间隔）
+        
+        for (int i = 0; i < num_points - 1; ++i) 
+        {
+            new_times.push_back(t_start + i * step); // c. 第一个点自然是t_start
+        }
+        // c. 强制把最后一个点设为t_end，避免累加浮点误差带来的微小偏差
+        new_times.push_back(t_end); 
+    }
+
+    // 将 std::vector 映射/转换为 Eigen::VectorXd 返回
+    return Map<VectorXd>(new_times.data(), new_times.size());
+}
+
 // 核心插值函数（返回Eigen矩阵）
 MatrixXd CFmPDR::linear_interpolation( const VectorXd& target_times, const MatrixXd& trajectory )
 {
@@ -134,6 +190,24 @@ MatrixXd CFmPDR::linear_interpolation( const VectorXd& target_times, const Matri
     return result;
 }
 
+MatrixXd CFmPDR::process_trajectory(const MatrixXd& original_trajectory)
+{
+    // 确保轨迹有效且包含时间列
+    if (original_trajectory.rows() == 0 || original_trajectory.cols() < 4) {
+        return MatrixXd(); 
+    }
+
+    // 1. 只传入 trajectory 的时间戳列作为参数（提取第 0 列）
+    const VectorXd &original_times = original_trajectory.col(0);
+
+    // 2. 获取经过新逻辑处理过的时间戳序列
+    VectorXd target_times = generate_target_times(original_times);
+
+    // 3. 调用你原有的 linear_interpolation 函数，获取新时间序列上的插值结果
+    return linear_interpolation(target_times, original_trajectory);
+
+}
+
 bool CFmPDR::appendEigenMatrixToCsv(const Eigen::MatrixXd& matrix, const std::string& filename, 
                             const std::vector<std::string>& headers) {
     // 修复：有符号/无符号类型比较
@@ -179,42 +253,44 @@ bool CFmPDR::appendEigenMatrixToCsv(const Eigen::MatrixXd& matrix, const std::st
 
 MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data )
 {
-    Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
-    if ( 0 == trajectory.rows() )
-        return Eigen::MatrixXd();
+    return m_merge_direction_step.merge_dir_step( start_info, process_data );
+    // Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
+    // if ( 0 == trajectory.rows() )
+    //     return Eigen::MatrixXd();
 
     //std::vector< std::string > customHeaders = { "timestamp", "pos_x", "pos_y", "angle" };
     //appendEigenMatrixToCsv( trajectory, "./t1.csv", customHeaders );
     // for ( Eigen::Index i = 0; i < trajectory.rows(); i++ )
     //     cout << "time:" << trajectory( i, 0 ) << ", x:" << trajectory( i, 1 ) << ", y:" << trajectory( i, 2 ) << ", direction:" << trajectory( i, 3 ) << endl;
 
-    MatrixXd t;
+    // MatrixXd t;
 
-    if ( process_data.have_location_true() )
-    {
-        size_t          true_data_size = process_data.get_true_data_size();
-        const VectorXd& true_data_time = process_data.get_true_data( TRUE_DATA_FIELD_TIME );
-        Eigen::VectorXd time_location  = Eigen::Map< const Eigen::VectorXd >( true_data_time.data(), true_data_size );
-        t                              = linear_interpolation( time_location, trajectory );
-    }
-    else
-    {
-        size_t          data_size     = process_data.get_pdr_data_size();
-        const VectorXd& data_time     = process_data.get_pdr_data( PDR_DATA_FIELD_TIME );
-        Eigen::VectorXd time_location = Eigen::Map< const Eigen::VectorXd >( data_time.data(), data_size );
-        t                             = linear_interpolation( time_location, trajectory );
-    }
+    // if ( process_data.have_location_true() )
+    // {
+    //     size_t          true_data_size = process_data.get_true_data_size();
+    //     const VectorXd& true_data_time = process_data.get_true_data( TRUE_DATA_FIELD_TIME );
+    //     Eigen::VectorXd time_location  = Eigen::Map< const Eigen::VectorXd >( true_data_time.data(), true_data_size );
+    //     t                              = linear_interpolation( time_location, trajectory );
+    // }
+    // else
+    // {
+    //     size_t          data_size     = process_data.get_pdr_data_size();
+    //     const VectorXd& data_time     = process_data.get_pdr_data( PDR_DATA_FIELD_TIME );
+    //     Eigen::VectorXd time_location = Eigen::Map< const Eigen::VectorXd >( data_time.data(), data_size );
+    //     t                             = linear_interpolation( time_location, trajectory );
+    // }
 
-    //appendEigenMatrixToCsv( t, "./t2.csv", customHeaders );
-    // cout << "==========================================================================================" << endl;
-    // for ( Eigen::Index i = 0; i < t.rows(); i++ )
-    //     cout << "time:" << t( i, 0 ) << ", x:" << t( i, 1 ) << ", y:" << t( i, 2 ) << ", direction:" << t( i, 3 ) << endl;
+    // t = CFmPDR::process_trajectory(trajectory)
+    // //appendEigenMatrixToCsv( t, "./t2.csv", customHeaders );
+    // // cout << "==========================================================================================" << endl;
+    // // for ( Eigen::Index i = 0; i < t.rows(); i++ )
+    // //     cout << "time:" << t( i, 0 ) << ", x:" << t( i, 1 ) << ", y:" << t( i, 2 ) << ", direction:" << t( i, 3 ) << endl;
 
-    constexpr double kK = 1e5;
+    // constexpr double kK = 111319.49079;  // 地球半径 * π / 180，单位：米/度
 
-    t.col( 1 ) = t.col( 1 ).array() / kK + start_info.x0;  // 第1列（x）整体缩放+偏移
-    t.col( 2 ) = t.col( 2 ).array() / kK + start_info.y0;  // 第2列（y）整体缩放+偏移
+    // t.col( 1 ) = t.col( 1 ).array() / kK + start_info.x0;  // 第1列（x）整体缩放+偏移
+    // t.col( 2 ) = t.col( 2 ).array() / kK + start_info.y0;  // 第2列（y）整体缩放+偏移
 
-    //appendEigenMatrixToCsv( t, "./t3.csv", customHeaders );
-    return t;
+    // //appendEigenMatrixToCsv( t, "./t3.csv", customHeaders );
+    // return t;
 }

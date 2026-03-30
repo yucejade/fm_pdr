@@ -1,3 +1,4 @@
+#include "fmm/fmm-api.hpp"
 #include "fm_pdr.h"
 #include "data_buffer_loader.h"
 #include "data_file_loader.h"
@@ -8,8 +9,9 @@
 // #include "magnetometer-calibration.h"
 #include "SensorData.h"
 #include "SixParametersCorrector.h"
+#include "trajectory_manager.h"
 #include "pdr.h"
-#include <Eigen/src/Core/Matrix.h>
+#include <Eigen/Core>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
@@ -426,6 +428,7 @@ void free_trajectory_vector( std::vector< PDRTrajectory* >* traj_vec )
 
 static void do_pdr( FmPDRHandler* hdl )
 {
+    TrajectoryManager tm( 4 );
     SensorData sensor_data;
     PDRData    pdr_data;
     bool       is_first_data = true;
@@ -436,7 +439,6 @@ static void do_pdr( FmPDRHandler* hdl )
 
     while ( hdl->m_status == PDR_RUNNING )
     {
-        std::unique_ptr< Eigen::MatrixXd > t;
         try
         {
             // 使用固定缓存模式读取传感器数据
@@ -466,11 +468,11 @@ static void do_pdr( FmPDRHandler* hdl )
                 is_first_data = false;
             }
 
-            t = std::make_unique< Eigen::MatrixXd >( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
+            tm.append( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
             // 导航结果写入无锁队列
-            if ( t && t->rows() > 0 )
-                hdl->queue.enqueue( t.release() );
+            // if ( t && t->rows() > 0 )
+            //     hdl->queue.enqueue( t.release() );
         }
         catch ( const PDRException& e )
         {

@@ -106,21 +106,21 @@ build_thirdparty() {
 
         # 编译sqlite库
         mkdir -p build/thirdparty/fmm/sqlite-src-3510300 && cd build/thirdparty/fmm/sqlite-src-3510300 || exit 1
-        ../../../../thirdparty/fmm/sqlite-src-3510300/configure CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        ../../../../thirdparty/fmm/sqlite-src-3510300/configure --disable-readline CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
         sudo make install
         cd ../../../.. || exit 1
 
-        # 编译libminizip库
-        cd thirdparty/fmm/libminizip-cmake || exit 1
-        cmake -B ../../../build/thirdparty/fmm/libminizip-cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
-        sudo make -C ../../../build/thirdparty/fmm/libminizip-cmake install
-        cd ../../.. || exit 1
+#       # 编译libminizip库
+#       cd thirdparty/fmm/libminizip-cmake || exit 1
+#       cmake -B ../../../build/thirdparty/fmm/libminizip-cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
+#       sudo make -C ../../../build/thirdparty/fmm/libminizip-cmake install
+#       cd ../../.. || exit 1
 
-        # 编译libtiff库
-        cd thirdparty/fmm/libtiff-master || exit 1
-        cmake -B ../../../build/thirdparty/fmm/libtiff-master -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
-        sudo make -C ../../../build/thirdparty/fmm/libtiff-master install
-        cd ../../.. || exit 1
+#       # 编译libtiff库
+#       cd thirdparty/fmm/libtiff-master || exit 1
+#       cmake -B ../../../build/thirdparty/fmm/libtiff-master -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
+#       sudo make -C ../../../build/thirdparty/fmm/libtiff-master install
+#       cd ../../.. || exit 1
 
         # 编译geos库
         cd thirdparty/fmm/geos || exit 1
@@ -130,7 +130,7 @@ build_thirdparty() {
 
         # 编译PROJ库
         cd thirdparty/fmm/PROJ || exit 1
-        cmake -B ../../../build/thirdparty/fmm/PROJ -DEXE_SQLITE3=../../../build/package/bin/sqlite3 -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -S .
+        cmake -B ../../../build/thirdparty/fmm/PROJ -DEXE_SQLITE3=../../../build/package/bin/sqlite3 -DENABLE_CURL=OFF -DBUILD_TESTING=OFF -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -S .
         sudo make -C ../../../build/thirdparty/fmm/PROJ install
         cd ../../.. || exit 1
 
@@ -174,7 +174,7 @@ build_thirdparty() {
 
         # 编译gdal库
         cd thirdparty/fmm/gdal || exit 1
-        cmake -B ../../../build/thirdparty/fmm/gdal -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DGDAL_USE_CURL=OFF -DGDAL_USE_SPATIALITE=OFF -DGDAL_ENABLE_DRIVER_GRIB=OFF -DGDAL_USE_ZSTD=OFF -DPROJ_DIR=${PACKAGE_PATH}/lib/cmake/proj -DCMAKE_BUILD_TYPE=release -S .
+        cmake -B ../../../build/thirdparty/fmm/gdal -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DGDAL_USE_CURL=OFF -DGDAL_USE_NETCDF=OFF -DGDAL_USE_HDF5=OFF -DGDAL_USE_SPATIALITE=OFF -DGDAL_ENABLE_DRIVER_GRIB=OFF -DGDAL_ENABLE_DRIVER_NETCDF=OFF -DGDAL_ENABLE_DRIVER_HDF5=OFF -DGDAL_USE_ZSTD=OFF -DPROJ_DIR=${PACKAGE_PATH}/lib/cmake/proj -DCMAKE_BUILD_TYPE=release -S .
         sudo make -C ../../../build/thirdparty/fmm/gdal install
         cd ../../.. || exit 1
 

@@ -264,7 +264,7 @@ public:
         }
     }
 protected:
-    static constexpr double kK = 1e5;
+    static constexpr double kK = 111319.49079;  // 地球半径 * π / 180，单位：米/度
     const PDRConfig*        m_config;
     DataType                m_data_type;
     size_t                  m_train_data_size;  // 对于切片后得到对象，该数据为0，表示包含训练数据的对象不允许切片
