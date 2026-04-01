@@ -1,4 +1,5 @@
-#include "fmm/fmm-api.hpp"
+#include "fmm_config.h"
+#include "fmm_app.h"
 #include "fm_pdr.h"
 #include "data_buffer_loader.h"
 #include "data_file_loader.h"
@@ -9,8 +10,8 @@
 // #include "magnetometer-calibration.h"
 #include "SensorData.h"
 #include "SixParametersCorrector.h"
-#include "trajectory_manager.h"
 #include "pdr.h"
+#include "trajectory_manager.h"
 #include <Eigen/Core>
 #include <cerrno>
 #include <cstdlib>
@@ -35,7 +36,9 @@ typedef enum _FmPDRStatus
 typedef struct _FmPDRHandler
 {
     std::string        m_config_dir;        // 配置文件目录
-    PDRConfig          m_config;            // 配置
+    PDRConfig          m_config;            // PDR配置
+    FMMConfig          m_fmm_config;        // FMM配置
+    FMMApp             m_fmm;               // FMM模型
     CFmPDR             m_pdr;               // PDR句柄
     StartInfo          m_si;                // 起点信息
     CFmDataManager*    m_data_loader;       // 数据加载器
@@ -48,11 +51,12 @@ typedef struct _FmPDRHandler
     moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
-    _FmPDRHandler( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position ) : m_config( config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
+        : m_config( config ), m_fmm_config( fmm_config ), m_fmm(fmm_config), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
-    _FmPDRHandler( const PDRConfig& config ) : m_config( config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config ) : m_config( config ), m_fmm_config( fmm_config ), m_fmm(fmm_config), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
@@ -429,10 +433,10 @@ void free_trajectory_vector( std::vector< PDRTrajectory* >* traj_vec )
 static void do_pdr( FmPDRHandler* hdl )
 {
     TrajectoryManager tm( 4 );
-    SensorData sensor_data;
-    PDRData    pdr_data;
-    bool       is_first_data = true;
-    int        ret;
+    SensorData        sensor_data;
+    PDRData           pdr_data;
+    bool              is_first_data = true;
+    int               ret;
 
     memset( &sensor_data, 0x00, sizeof( sensor_data ) );
     memset( &pdr_data, 0x00, sizeof( pdr_data ) );
@@ -508,16 +512,23 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 
     try
     {
-        const string&                   config_path = string( config_dir ) + "//" + "config.json";
-        PDRConfig                       config      = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
+        const string&                   config_path     = string( config_dir ) + "//" + "config.json";
+        PDRConfig                       config          = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
+        const string&                   fmm_config_path = string( config_dir ) + "//" + "fmm_config.xml";
+        FMMConfig                       fmm_config( fmm_config_path );
         std::unique_ptr< FmPDRHandler > h;
+
+        if ( ! fmm_config.validate() )
+        {
+            throw FileException( FileException::OPEN_FAILED, fmm_config_path.c_str() );
+        }
 
         if ( train_file_path )
         {
             CFmDataFileLoader                                data_loader( config, ( size_t )-1, train_file_path );
             std::unique_ptr< std::vector< PDRTrajectory* > > trajectories_vector = std::make_unique< std::vector< PDRTrajectory* > >();
             Eigen::MatrixXd*                                 train_trajectories  = new Eigen::MatrixXd();
-            h                                                                    = std::make_unique< FmPDRHandler >( config, data_loader, *train_trajectories );
+            h                                                                    = std::make_unique< FmPDRHandler >( config, fmm_config, data_loader, *train_trajectories );
 
             if ( trajectories_array )
             {
@@ -531,7 +542,7 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
         }
         else
         {
-            h = std::make_unique< FmPDRHandler >( config );
+            h = std::make_unique< FmPDRHandler >( config, fmm_config );
         }
 
         h->m_config_dir = config_dir;
