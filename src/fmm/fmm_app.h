@@ -11,6 +11,7 @@
 #define FMM_FMM_APP_H_
 
 #include "fmm_config.h"
+#include <Eigen/Dense>
 
 /**
  * Class of fmm command line program
@@ -25,9 +26,9 @@ public:
      */
     FMMApp( const FMMConfig& config ) : config_( config ), network_( config_.network_config ), ng_( network_ ), ubodt_( UBODT::read_ubodt_file( config_.ubodt_file ) ) {};
     /**
-     * Run the fmm program
+     * Match the fmm program
      */
-    void run();
+    Eigen::MatrixXd  match( const Eigen::MatrixXd& traj_matrix );
 private:
     const FMMConfig&         config_;
     NETWORK::Network         network_;

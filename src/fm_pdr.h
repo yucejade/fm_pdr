@@ -12,6 +12,7 @@ typedef struct _PDRConfig
 {
     int    sample_rate;           ///< 采样率
     int    pdr_duration;          ///< 送给PDR算法的时间间隔
+    int    match_duration;        ///< 送给FMM算法的时间间隔(必须是pdr_duration的倍数)
     char*  model_name;            ///< 模型名
     char*  model_file_name;       ///< 保存/加载模型文件名
     int    clean_start;           ///< 训练时去除的头部不稳定数据

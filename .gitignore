@@ -1,4 +1,5 @@
 build/
+build.log
 .cache/
 thirdparty/fmm/libspatialite-5.1.0/config.guess
 thirdparty/fmm/libspatialite-5.1.0/config.sub

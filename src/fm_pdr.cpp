@@ -1,5 +1,5 @@
-#include "fmm_config.h"
 #include "fmm_app.h"
+#include "fmm_config.h"
 #include "fm_pdr.h"
 #include "data_buffer_loader.h"
 #include "data_file_loader.h"
@@ -52,11 +52,11 @@ typedef struct _FmPDRHandler
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
     _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
-        : m_config( config ), m_fmm_config( fmm_config ), m_fmm(fmm_config), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
+        : m_config( config ), m_fmm_config( fmm_config ), m_fmm( fmm_config ), m_pdr( m_config, train_data, train_position ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
-    _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config ) : m_config( config ), m_fmm_config( fmm_config ), m_fmm(fmm_config), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
+    _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config ) : m_config( config ), m_fmm_config( fmm_config ), m_fmm( fmm_config ), m_pdr( m_config ), m_data_loader( nullptr ), m_sensor_data_path( nullptr ), m_loaded_corrector( nullptr ), m_status( PDR_STOPPED )
     {
         memset( &m_device_handle, 0x00, sizeof( m_device_handle ) );
     }
@@ -474,9 +474,13 @@ static void do_pdr( FmPDRHandler* hdl )
 
             tm.append( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
+            Eigen::MatrixXd process_trajectory = tm.process_trajectory( hdl->m_config.match_duration );
+
+            Eigen::MatrixXd predict_trajectories = hdl->m_fmm.match( process_trajectory );
+
             // 导航结果写入无锁队列
-            // if ( t && t->rows() > 0 )
-            //     hdl->queue.enqueue( t.release() );
+            if ( predict_trajectories.rows() > 0 )
+                hdl->queue.enqueue( new Eigen::MatrixXd( predict_trajectories.row( predict_trajectories.rows() - 1 ) ) );    // 取最后一行数据作为最新位置点
         }
         catch ( const PDRException& e )
         {
@@ -702,8 +706,13 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         // 根据是否创建设备句柄判断PDR模式
         if ( ! hdl->m_device_handle )
         {
-            predict_trajectories = new Eigen::MatrixXd( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
-            ret                  = eigenToPDRTrajectory( *predict_trajectories, &trajs );
+            TrajectoryManager tm( 4 );
+            tm.append( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
+            Eigen::MatrixXd  process_trajectory   = tm.process_trajectory( hdl->m_config.match_duration );
+            
+            predict_trajectories = new Eigen::MatrixXd( hdl->m_fmm.match( process_trajectory ) );
+
+            ret = eigenToPDRTrajectory( *predict_trajectories, &trajs );
             trajectories_vector_guard->push_back( trajs );
 
             trajectories_array->array = trajectories_vector_guard->data();

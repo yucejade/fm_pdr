@@ -12,9 +12,10 @@ public:
     bool appendEigenMatrixToCsv( const Eigen::MatrixXd& matrix, const std::string& filename, const std::vector< std::string >& headers = {} );
 private:
     CFmMergeDirectionStep m_merge_direction_step;
-
-    size_t   find_interval( double t, const Eigen::MatrixXd& trajectory ) const;
-    VectorXd generate_target_times(const VectorXd& original_times);
-    MatrixXd linear_interpolation( const VectorXd& target_times, const MatrixXd& trajectory );
-    MatrixXd process_trajectory(const MatrixXd& original_trajectory);
+    int m_match_duration;
+    
+    // size_t   find_interval( double t, const Eigen::MatrixXd& trajectory ) const;
+    // VectorXd generate_target_times(const VectorXd& original_times);
+    // MatrixXd linear_interpolation( const VectorXd& target_times, const MatrixXd& trajectory );
+    // MatrixXd process_trajectory(const MatrixXd& original_trajectory);
 };
