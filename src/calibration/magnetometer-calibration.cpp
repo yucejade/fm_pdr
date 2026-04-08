@@ -6,6 +6,9 @@
 #include <unsupported/Eigen/MatrixFunctions>
 
 using namespace Spectra;
+using namespace std;
+using namespace Eigen;
+using namespace rapidjson;
 
 CFmMagnetometerCalibration::CFmMagnetometerCalibration( const string& calibration_path )
 {

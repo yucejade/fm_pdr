@@ -2,6 +2,8 @@
 #include "fm_pdr.h"
 #include <GeographicLib/Geodesic.hpp>
 
+using namespace std;
+using namespace Eigen;
 using namespace rapidcsv;
 
 CFmDataManager::CFmDataManager( DataType type ) : m_config( nullptr ), m_data_type( type ), m_train_data_size( 0 ) {}

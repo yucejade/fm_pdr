@@ -2,6 +2,10 @@
 #include <Eigen/src/Core/Matrix.h>
 #include <filesystem>
 
+using namespace std;
+using namespace Eigen;
+using namespace rapidcsv;
+
 namespace fs = filesystem;
 
 CFmDataFileLoader::CFmDataFileLoader() : CFmDataManager( DATA_TYPE_FILE ) {}

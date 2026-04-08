@@ -5,8 +5,6 @@
 #include <Eigen/Dense>
 #include <memory>
 
-using namespace FMM;
-using namespace FMM::IO;
 
 /**
  * Reader for Eigen matrix trajectory data
@@ -17,7 +15,7 @@ using namespace FMM::IO;
  * col2: y
  * col3: direction (optional, not used currently)
  */
-class EigenMatrixReader : public ITrajectoryReader
+class EigenMatrixReader : public FMM::IO::ITrajectoryReader
 {
 public:
     EigenMatrixReader( const Eigen::MatrixXd& traj_matrix, int traj_id = 0 );
@@ -44,9 +42,9 @@ public:
     // Eigen-based
     TrajectoryReader( const Eigen::MatrixXd& matrix );
 
-    std::shared_ptr< ITrajectoryReader > get_reader();
+    std::shared_ptr< FMM::IO::ITrajectoryReader > get_reader();
 private:
-    std::shared_ptr< ITrajectoryReader > reader;
+    std::shared_ptr< FMM::IO::ITrajectoryReader > reader;
 };
 
 #endif  // FMM_TRAJECTORY_READER_HPP

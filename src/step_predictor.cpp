@@ -11,6 +11,8 @@
 #include <stdexcept>
 #include <vector>
 
+using namespace std;
+
 CFmStepPredictor::CFmStepPredictor( const PDRConfig& config, const CFmDataManager& train_data ) : m_config( config ), m_train_data( nullptr )
 {
     int start = ( config.clean_start <= 0 ? 0 : config.clean_start ) * config.sample_rate;

@@ -1,6 +1,8 @@
 #include "merge_direction_step.h"
 #include "fm_pdr.h"
 
+using namespace std;
+
 CFmMergeDirectionStep::CFmMergeDirectionStep( const PDRConfig& config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position ) : m_config( config ), m_valid_peak_value( 0.0f ), m_mean_step( 0.0f ), m_step_predictor( config, train_data ), m_direction_predictor( config )
 {
     // 添加切片后的原始轨迹点

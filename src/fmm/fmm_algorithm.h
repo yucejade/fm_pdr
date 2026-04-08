@@ -17,8 +17,6 @@
 #include <boost/property_tree/xml_parser.hpp>
 #include <string>
 
-using namespace FMM;
-using namespace FMM::MM;
 
 /**
  * Configuration class for fmm algorithm
@@ -83,21 +81,21 @@ public:
      * @param graph road network graph
      * @param ubodt Upperbounded origin destination table
      */
-    FastMapMatch( const NETWORK::Network& network, const NETWORK::NetworkGraph& graph, std::shared_ptr< UBODT > ubodt ) : network_( network ), graph_( graph ), ubodt_( ubodt ) {};
+    FastMapMatch( const FMM::NETWORK::Network& network, const FMM::NETWORK::NetworkGraph& graph, std::shared_ptr< UBODT > ubodt ) : network_( network ), graph_( graph ), ubodt_( ubodt ) {};
     /**
      * Match a trajectory to the road network
      * @param  traj   input trajector data
      * @param  config configuration of map matching algorithm
      * @return map matching result
      */
-    MatchResult match_traj( const CORE::Trajectory& traj, const FastMapMatchConfig& config );
+    FMM::MM::MatchResult match_traj( const FMM::CORE::Trajectory& traj, const FastMapMatchConfig& config );
     /**
      * Match a wkt linestring to the road network.
      * @param wkt WKT representation of a trajectory
      * @param config Map matching configuration
      * @return Map matching result in POD format used in Python API
      */
-    PYTHON::PyMatchResult match_wkt( const std::string& wkt, const FastMapMatchConfig& config );
+    FMM::PYTHON::PyMatchResult match_wkt( const std::string& wkt, const FastMapMatchConfig& config );
     /**
      * Match GPS data stored in a file
      * @param  gps_config    [description]
@@ -114,14 +112,14 @@ protected:
      * @param  cb to candidate
      * @return  shortest path value
      */
-    double get_sp_dist( const Candidate* ca, const Candidate* cb, double reverse_tolerance );
+    double get_sp_dist( const FMM::MM::Candidate* ca, const FMM::MM::Candidate* cb, double reverse_tolerance );
     /**
      * Update probabilities in a transition graph
      * @param tg transition graph
      * @param traj raw trajectory
      * @param config map match configuration
      */
-    void update_tg( TransitionGraph* tg, const CORE::Trajectory& traj, double reverse_tolerance = 0 );
+    void update_tg( FMM::MM::TransitionGraph* tg, const FMM::CORE::Trajectory& traj, double reverse_tolerance = 0 );
     /**
      * Update probabilities between two layers a and b in the transition graph
      * @param level   the index of layer a
@@ -131,10 +129,10 @@ protected:
      * @param connected the variable is set to false if the layer is not connected
      * with the next layer
      */
-    void update_layer( int level, TGLayer* la_ptr, TGLayer* lb_ptr, double eu_dist, double reverse_tolerance, bool* connected );
+    void update_layer( int level, FMM::MM::TGLayer* la_ptr, FMM::MM::TGLayer* lb_ptr, double eu_dist, double reverse_tolerance, bool* connected );
 private:
-    const NETWORK::Network&      network_;
-    const NETWORK::NetworkGraph& graph_;
+    const FMM::NETWORK::Network&      network_;
+    const FMM::NETWORK::NetworkGraph& graph_;
     std::shared_ptr< UBODT >     ubodt_;
 };
 

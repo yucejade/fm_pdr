@@ -1,5 +1,3 @@
-#include "fmm_app.h"
-#include "fmm_config.h"
 #include "fm_pdr.h"
 #include "data_buffer_loader.h"
 #include "data_file_loader.h"
@@ -12,6 +10,8 @@
 #include "SixParametersCorrector.h"
 #include "pdr.h"
 #include "trajectory_manager.h"
+#include "fmm_app.h"
+#include "fmm_config.h"
 #include <Eigen/Core>
 #include <cerrno>
 #include <cstdlib>
@@ -516,9 +516,9 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 
     try
     {
-        const string&                   config_path     = string( config_dir ) + "//" + "config.json";
+        const std::string&                   config_path     = std::string( config_dir ) + "//" + "config.json";
         PDRConfig                       config          = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
-        const string&                   fmm_config_path = string( config_dir ) + "//" + "fmm_config.xml";
+        const std::string&                   fmm_config_path = std::string( config_dir ) + "//" + "fmm_config.xml";
         FMMConfig                       fmm_config( fmm_config_path );
         std::unique_ptr< FmPDRHandler > h;
 
@@ -812,7 +812,7 @@ void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
     if ( ! trajectories_array )
         return;
 
-    free_trajectory_vector( static_cast< vector< PDRTrajectory* >* >( trajectories_array->ptr ) );
+    free_trajectory_vector( static_cast< std::vector< PDRTrajectory* >* >( trajectories_array->ptr ) );
 }
 
 int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray* trajectories_array )

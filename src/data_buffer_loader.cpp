@@ -3,6 +3,9 @@
 #include <Eigen/src/Core/Matrix.h>
 #include <ostream>
 
+using namespace std;
+using namespace Eigen;
+
 CFmDataBufferLoader::CFmDataBufferLoader() : CFmDataManager( DATA_TYPE_BUFFER ) {}
 
 CFmDataBufferLoader::CFmDataBufferLoader( const PDRConfig& config, size_t train_data_size, const PDRData& data ) : CFmDataManager( config, DATA_TYPE_BUFFER, train_data_size )

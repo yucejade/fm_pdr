@@ -31,8 +31,8 @@ public:
     Eigen::MatrixXd  match( const Eigen::MatrixXd& traj_matrix );
 private:
     const FMMConfig&         config_;
-    NETWORK::Network         network_;
-    NETWORK::NetworkGraph    ng_;
+    FMM::NETWORK::Network         network_;
+    FMM::NETWORK::NetworkGraph    ng_;
     std::shared_ptr< UBODT > ubodt_;
 };
 

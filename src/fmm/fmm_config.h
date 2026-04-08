@@ -13,7 +13,6 @@
 #include "fmm/fmm-api.hpp"
 #include "fmm_algorithm.h"
 
-using namespace FMM;
 
 /**
  * Configuration class of fmm command line program
@@ -47,9 +46,9 @@ public:
      */
     static void print_help();
 
-    CONFIG::NetworkConfig network_config; /**< Network data configuraiton */
-    CONFIG::GPSConfig     gps_config;     /**< GPS data configuraiton */
-    CONFIG::ResultConfig  result_config;  /**< Result configuraiton */
+    FMM::CONFIG::NetworkConfig network_config; /**< Network data configuraiton */
+    FMM::CONFIG::GPSConfig     gps_config;     /**< GPS data configuraiton */
+    FMM::CONFIG::ResultConfig  result_config;  /**< Result configuraiton */
     FastMapMatchConfig    fmm_config;     /**< Map matching configuraiton */
     std::string           ubodt_file;     /**< UBODT file name */
 };

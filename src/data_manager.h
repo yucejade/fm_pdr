@@ -4,7 +4,6 @@
 #include <eigen3/Eigen/Dense>
 #include <rapidcsv.h>
 
-using namespace std;
 using namespace Eigen;
 
 typedef enum _DataType
@@ -96,7 +95,7 @@ public:
         return m_time.size();
     }
 
-    inline const VectorXd& get_pdr_data( PDRDataField field ) const
+    inline const Eigen::VectorXd& get_pdr_data( PDRDataField field ) const
     {
         switch ( field )
         {
@@ -152,7 +151,7 @@ public:
         return m_time_location_true.size();
     }
 
-    inline const VectorXd& get_true_data( TrueDataField field ) const
+    inline const Eigen::VectorXd& get_true_data( TrueDataField field ) const
     {
         switch ( field )
         {
@@ -186,7 +185,7 @@ public:
         return m_train_data_size;
     }
 
-    inline const VectorXd& get_train_data( TrueDataField field ) const
+    inline const Eigen::VectorXd& get_train_data( TrueDataField field ) const
     {
         if ( m_train_data_size == 0 )
             throw std::invalid_argument( "No training data available" );
@@ -286,66 +285,66 @@ protected:
     bool m_have_location_true        = false;  // 如果存在真实位置数据，则可以训练和评估，否则只能预测
     bool m_have_line_accelererometer = false;  // 如果存在线性加速度计数据，则使用线性加速度计计算重力加速度，否则，使用加速度计来计算重力加速度
 
-    pair< double, double > m_origin;  // 当存在训练数据时，以最后一条训练数据作为原点；当不存在训练数据时，以第一个点作为原点
+    std::pair< double, double > m_origin;  // 当存在训练数据时，以最后一条训练数据作为原点；当不存在训练数据时，以第一个点作为原点
 
     double m_slice_start = 0.0;  // private
     double m_slice_end   = 0.0;  // private
 
-    MatrixXd m_a;
-    MatrixXd m_la;
-    MatrixXd m_gs;
-    MatrixXd m_m;
-    MatrixXd m_g;
-    MatrixXd m_location;       // 没有训练数据时，为空
-    MatrixXd m_location_true;  // 没有真实定位数据时，为空
+    Eigen::MatrixXd m_a;
+    Eigen::MatrixXd m_la;
+    Eigen::MatrixXd m_gs;
+    Eigen::MatrixXd m_m;
+    Eigen::MatrixXd m_g;
+    Eigen::MatrixXd m_location;       // 没有训练数据时，为空
+    Eigen::MatrixXd m_location_true;  // 没有真实定位数据时，为空
 
-    VectorXd m_time;
-    VectorXd m_a_x;
-    VectorXd m_a_y;
-    VectorXd m_a_z;
-    VectorXd m_a_mag;
-    VectorXd m_la_x;
-    VectorXd m_la_y;
-    VectorXd m_la_z;
-    VectorXd m_la_mag;
-    VectorXd m_gs_x;
-    VectorXd m_gs_y;
-    VectorXd m_gs_z;
-    VectorXd m_gs_mag;
-    VectorXd m_m_x;
-    VectorXd m_m_y;
-    VectorXd m_m_z;
-    VectorXd m_m_mag;
-    VectorXd m_g_x;
-    VectorXd m_g_y;
-    VectorXd m_g_z;
-    VectorXd m_g_mag;
+    Eigen::VectorXd m_time;
+    Eigen::VectorXd m_a_x;
+    Eigen::VectorXd m_a_y;
+    Eigen::VectorXd m_a_z;
+    Eigen::VectorXd m_a_mag;
+    Eigen::VectorXd m_la_x;
+    Eigen::VectorXd m_la_y;
+    Eigen::VectorXd m_la_z;
+    Eigen::VectorXd m_la_mag;
+    Eigen::VectorXd m_gs_x;
+    Eigen::VectorXd m_gs_y;
+    Eigen::VectorXd m_gs_z;
+    Eigen::VectorXd m_gs_mag;
+    Eigen::VectorXd m_m_x;
+    Eigen::VectorXd m_m_y;
+    Eigen::VectorXd m_m_z;
+    Eigen::VectorXd m_m_mag;
+    Eigen::VectorXd m_g_x;
+    Eigen::VectorXd m_g_y;
+    Eigen::VectorXd m_g_z;
+    Eigen::VectorXd m_g_mag;
 
-    VectorXd m_time_location;
-    VectorXd m_latitude;
-    VectorXd m_longitude;
-    VectorXd m_height;
-    VectorXd m_velocity;
-    VectorXd m_direction;
-    VectorXd m_horizontal_accuracy;
-    VectorXd m_vertical_accuracy;
-    VectorXd m_x;
-    VectorXd m_y;
+    Eigen::VectorXd m_time_location;
+    Eigen::VectorXd m_latitude;
+    Eigen::VectorXd m_longitude;
+    Eigen::VectorXd m_height;
+    Eigen::VectorXd m_velocity;
+    Eigen::VectorXd m_direction;
+    Eigen::VectorXd m_horizontal_accuracy;
+    Eigen::VectorXd m_vertical_accuracy;
+    Eigen::VectorXd m_x;
+    Eigen::VectorXd m_y;
 
-    VectorXd m_time_location_true;
-    VectorXd m_latitude_true;
-    VectorXd m_longitude_true;
-    VectorXd m_height_true;
-    VectorXd m_velocity_true;
-    VectorXd m_direction_true;
-    VectorXd m_horizontal_accuracy_true;
-    VectorXd m_vertical_accuracy_true;
-    VectorXd m_x_true;
-    VectorXd m_y_true;
+    Eigen::VectorXd m_time_location_true;
+    Eigen::VectorXd m_latitude_true;
+    Eigen::VectorXd m_longitude_true;
+    Eigen::VectorXd m_height_true;
+    Eigen::VectorXd m_velocity_true;
+    Eigen::VectorXd m_direction_true;
+    Eigen::VectorXd m_horizontal_accuracy_true;
+    Eigen::VectorXd m_vertical_accuracy_true;
+    Eigen::VectorXd m_x_true;
+    Eigen::VectorXd m_y_true;
 protected:
-    MatrixXd        nearest_neighbor_interpolation( const VectorXd& time_query, const VectorXd& time_data, const MatrixXd& data ) const;
-    VectorXd        magnitude( const MatrixXd& matrix );
-    bool            save_to_csv( const MatrixXd& matrix, const string& filename, const vector< string >& col_names );
+    Eigen::MatrixXd        nearest_neighbor_interpolation( const Eigen::VectorXd& time_query, const Eigen::VectorXd& time_data, const Eigen::MatrixXd& data ) const;
+    Eigen::VectorXd        magnitude( const Eigen::MatrixXd& matrix );
+    bool            save_to_csv( const Eigen::MatrixXd& matrix, const std::string& filename, const std::vector< std::string >& col_names );
     Eigen::MatrixXd get_gravity_with_ahrs( Eigen::MatrixXd& accelerometer, Eigen::MatrixXd& gyroscope, Eigen::MatrixXd& magnetometer );
 private:
     double get_dir_error( const Eigen::MatrixXd& trajectory ) const;

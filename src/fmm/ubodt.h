@@ -12,19 +12,17 @@
 
 #include "fmm/fmm-api.hpp"
 
-using namespace FMM;
-using namespace FMM::MM;
 
 /**
  * %Record type of the upper bounded origin destination table
  */
 struct Record
 {
-    NETWORK::NodeIndex source;  /**< source node*/
-    NETWORK::NodeIndex target;  /**< target node*/
-    NETWORK::NodeIndex first_n; /**< next node visited from source to target */
-    NETWORK::NodeIndex prev_n;  /**< last node visited before target */
-    NETWORK::EdgeIndex next_e;  /**< next edge visited from source to target */
+    FMM::NETWORK::NodeIndex source;  /**< source node*/
+    FMM::NETWORK::NodeIndex target;  /**< target node*/
+    FMM::NETWORK::NodeIndex first_n; /**< next node visited from source to target */
+    FMM::NETWORK::NodeIndex prev_n;  /**< last node visited before target */
+    FMM::NETWORK::EdgeIndex next_e;  /**< next edge visited from source to target */
     double             cost;    /**< distance from source to target */
     Record*            next;    /**< the next record stored in hashtable */
 };
@@ -52,7 +50,7 @@ public:
      * @return  A row in the ubodt if the od pair is found, otherwise nullptr
      * is returned.
      */
-    Record* look_up( NETWORK::NodeIndex source, NETWORK::NodeIndex target ) const;
+    Record* look_up( FMM::NETWORK::NodeIndex source, FMM::NETWORK::NodeIndex target ) const;
 
     /**
      * Look up a shortest path (SP) containing edges from source to target.
@@ -61,7 +59,7 @@ public:
      * @param  target target node
      * @return  a shortest path connecting source to target
      */
-    std::vector< NETWORK::EdgeIndex > look_sp_path( NETWORK::NodeIndex source, NETWORK::NodeIndex target ) const;
+    std::vector< FMM::NETWORK::EdgeIndex > look_sp_path( FMM::NETWORK::NodeIndex source, FMM::NETWORK::NodeIndex target ) const;
 
     /**
      * Construct the complete path (a vector of edge ID) from an optimal path
@@ -75,7 +73,7 @@ public:
      * path implying complete path cannot be found in UBDOT,
      * an empty path is returned
      */
-    C_Path construct_complete_path( int traj_id, const TGOpath& path, const std::vector< NETWORK::Edge >& edges, std::vector< int >* indices, double reverse_tolerance ) const;
+    FMM::MM::C_Path construct_complete_path( int traj_id, const FMM::MM::TGOpath& path, const std::vector< FMM::NETWORK::Edge >& edges, std::vector< int >* indices, double reverse_tolerance ) const;
     /**
      * Get the upperbound of the UBODT
      * @return upperbound value
@@ -87,7 +85,7 @@ public:
      * @param  target destination/target node
      * @return  bucket index
      */
-    unsigned int cal_bucket_index( NETWORK::NodeIndex source, NETWORK::NodeIndex target ) const;
+    unsigned int cal_bucket_index( FMM::NETWORK::NodeIndex source, FMM::NETWORK::NodeIndex target ) const;
 
     /**
      *  Insert a record into the hash table
