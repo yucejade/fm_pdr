@@ -18,25 +18,31 @@ Eigen::MatrixXd FMMApp::match( const Eigen::MatrixXd& traj_matrix )
     FastMapMatch              mm_model( network_, ng_, ubodt_ );
     const FastMapMatchConfig& fmm_config = config_.fmm_config;
     TrajectoryReader          reader( traj_matrix );
-    // IO::GPSReader             reader( config_.gps_config );
-    // IO::CSVMatchResultWriter  writer( config_.result_config.file, config_.result_config.output_config );
-    // Start map matching
-    int points_matched = 0;
-    int total_points   = 0;
 
     while ( reader.get_reader()->has_next_trajectory() )
     {
         FMM::CORE::Trajectory trajectory   = reader.get_reader()->read_next_trajectory();
-        int                   points_in_tr = trajectory.geom.get_num_points();
         MM::MatchResult       result       = mm_model.match_traj( trajectory, fmm_config );
-        // writer.write_result( trajectory, result );
-        if ( ! result.cpath.empty() )
+
+        if ( ! result.cpath.empty() && ! result.opt_candidate_path.empty() )
         {
-            points_matched += points_in_tr;
+            // 取最后一个点的匹配结果
+            const auto& last_matched = result.opt_candidate_path.back();
+            double      matched_x    = boost::geometry::get< 0 >( last_matched.c.point );
+            double      matched_y    = boost::geometry::get< 1 >( last_matched.c.point );
+
+            // 时间戳和方向使用 traj_matrix 中最后一个点的原始数据
+            int    last_row   = traj_matrix.rows() - 1;
+            double timestamp  = traj_matrix( last_row, 0 );
+            double direction  = traj_matrix.cols() > 3 ? traj_matrix( last_row, 3 ) : 0.0;
+
+            // 输出格式: [timestamp, matched_x, matched_y, direction]
+            Eigen::MatrixXd out( 1, 4 );
+            out << timestamp, matched_x, matched_y, direction;
+            return out;
         }
-        total_points += points_in_tr;
     }
 
-    //TODO:build a matrix to return, currently just return an empty matrix
-    return Eigen::Matrix();
+    // 匹配失败，返回空矩阵
+    return Eigen::MatrixXd();
 };

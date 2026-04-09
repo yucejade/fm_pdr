@@ -28,7 +28,7 @@ build_thirdparty() {
         # 进入第三方库目录并编译
         # 编译openblas库
         cd thirdparty/OpenBLAS-develop || exit 1
-        cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_TESTING=OFF -DNOFORTRAN=ON -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/OpenBLAS-develop -DBUILD_TESTING=OFF -DNOFORTRAN=ON -DBUILD_STATIC_LIBS=ON -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S .
         make -C ../../build/thirdparty/OpenBLAS-develop install
         cd ../.. || exit 1
 
@@ -40,7 +40,7 @@ build_thirdparty() {
 
         # 编译Fusion-main库
         cd thirdparty/Fusion-main || exit 1
-        cmake -B ../../build/thirdparty/Fusion-main -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/Fusion-main -DCMAKE_INSTALL_PREFIX=../../build/package -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S .
         make -C ../../build/thirdparty/Fusion-main
         cp -r ../../build/thirdparty/Fusion-main/Fusion/libFusion.a ../../build/package/lib/
         mkdir -p ../../build/package/include/Fusion/
@@ -49,19 +49,19 @@ build_thirdparty() {
 
         # 编译iir1-master库
         cd thirdparty/iir1-master || exit 1
-        cmake -B ../../build/thirdparty/iir1-master -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/iir1-master -DCMAKE_INSTALL_PREFIX=../../build/package -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S .
         make -C ../../build/thirdparty/iir1-master install
         cd ../.. || exit 1
 
         # 编译geographiclib-main库
         cd thirdparty/geographiclib-main || exit 1
-        cmake -B ../../build/thirdparty/geographiclib-main -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/geographiclib-main -DBUILD_SHARED_LIBS=OFF -DCMAKE_INSTALL_PREFIX=../../build/package -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S .
         make -C ../../build/thirdparty/geographiclib-main install
         cd ../.. || exit 1
 
         # 编译dlib-20.0库
         cd thirdparty/dlib-20.0 || exit 1
-        cmake -B ../../build/thirdparty/dlib-20.0 -DCMAKE_INSTALL_PREFIX=../../build/package -S .
+        cmake -B ../../build/thirdparty/dlib-20.0 -DCMAKE_INSTALL_PREFIX=../../build/package -DCMAKE_POSITION_INDEPENDENT_CODE=ON -S .
         make -C ../../build/thirdparty/dlib-20.0 install
         cd ../.. || exit 1
 

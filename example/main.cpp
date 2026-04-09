@@ -12,7 +12,7 @@
 #include <string>
 #include <vector>
 
-namespace fs = filesystem;
+namespace fs = std::filesystem;
 
 // 简单的命令行参数解析类
 class ArgParser
@@ -152,13 +152,13 @@ int main( int argc, char* argv[] )
                 if ( rows == 0 )
                 {
                     if ( ! is_stop )
-                        cout << "A stop event has been detected." << endl;
+                        std::cout << "A stop event has been detected." << std::endl;
                     is_stop = true;
                 }
                 else
                 {
                     if ( is_stop )
-                        cout << "Resuming from stop event." << endl;
+                        std::cout << "Resuming from stop event." << std::endl;
                     is_stop = false;
 
                     size_t old_rows = trajectory.rows();

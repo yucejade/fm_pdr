@@ -8,6 +8,7 @@ using namespace FMM::CORE;
 using namespace FMM::NETWORK;
 using namespace FMM::CONFIG;
 using namespace FMM::MM;
+using namespace FMM;
 
 FMMConfig::FMMConfig( const std::string& file )
 {

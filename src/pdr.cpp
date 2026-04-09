@@ -69,7 +69,17 @@ bool CFmPDR::appendEigenMatrixToCsv(const Eigen::MatrixXd& matrix, const std::st
 
 MatrixXd CFmPDR::pdr( StartInfo& start_info, const CFmDataManager& process_data )
 {
-    return m_merge_direction_step.merge_dir_step( start_info, process_data );
+    Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
+    if ( 0 == trajectory.rows() )
+        return Eigen::MatrixXd();
+
+    constexpr double kK = 111319.49079;  // 地球半径 * π / 180，单位：米/度
+
+    trajectory.col( 1 ) = trajectory.col( 1 ).array() / kK + start_info.x0;  // 第1列（x）整体缩放+偏移
+    trajectory.col( 2 ) = trajectory.col( 2 ).array() / kK + start_info.y0;  // 第2列（y）整体缩放+偏移
+
+    return trajectory;
+
     // Eigen::MatrixXd trajectory = m_merge_direction_step.merge_dir_step( start_info, process_data );
     // if ( 0 == trajectory.rows() )
     //     return Eigen::MatrixXd();
