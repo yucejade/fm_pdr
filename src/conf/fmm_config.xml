@@ -2,10 +2,10 @@
 <config>
   <input>
     <ubodt>
-      <file>../data/ubodt.txt</file>
+      <file>../conf/network/ubodt.txt</file>
     </ubodt>
     <network>
-      <file>../data/edges.shp</file>
+      <file>../conf/network/edges.shp</file>
       <id>id</id>
     </network>
     <gps>
