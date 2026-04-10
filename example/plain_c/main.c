@@ -18,6 +18,9 @@ double x_value            = 0;
 double y_value            = 0;
 char*  output_path_value  = NULL;
 char*  raw_data_dir_value = NULL;
+char*  network_file_value = NULL;
+char*  ubodt_file_value   = NULL;
+double delta_value        = 0.02;
 
 // 长选项定义
 static struct option long_options[] = {
@@ -29,6 +32,9 @@ static struct option long_options[] = {
     { "start-lat", required_argument, NULL, 'y' },
     { "output-path", required_argument, NULL, 'o' },
     { "save-pdr-data", required_argument, NULL, 'r' },
+    { "network", required_argument, NULL, 'n' },
+    { "ubodt", required_argument, NULL, 'u' },
+    { "delta", required_argument, NULL, 'l' },
     { "help", no_argument, NULL, 'h' },
     { 0, 0, 0, 0 }  // 结束标记
 };
@@ -47,6 +53,9 @@ void show_help( char* prog_name )
     printf( "  -y, --start-lat <纬度>\t\t设置起始点纬度值（WGS84坐标系，基于实时数据测试时生效）\n" );
     printf( "  -o, --output-path <行人航迹数据文件路径>\t表示需要保存的<行人航迹数据文件路径>，使用model_file_name配置项设置路径下的模型文件进行推算\n" );
     printf( "  -r, --raw-data-dir <传感器数据保存路径>\t基于传感器数据进行PDR测试时，表示需要保存的原始传感器测量数据路径，不设置改选项不保存数据文件\n" );
+    printf( "  -n, --network <路网文件路径>\t\t输入路网shapefile文件路径\n" );
+    printf( "  -u, --ubodt <输出文件路径>\t\t输出UBODT文件路径\n" );
+    printf( "  -l, --delta <数值>\t\t\tUBODT上界参数（默认0.02）\n" );
     printf( "  -h, --help\t\t\t\t帮助信息\n" );
     printf( "示例:\n" );
     printf( "训练模型:\n" );
@@ -55,6 +64,8 @@ void show_help( char* prog_name )
     printf( "    %s -x 32.11199920 -y 118.9528682 --output-path \"./Trajectory.csv\" --raw-data-dir \"./output_sensor_data\"\n", prog_name );
     printf( "基于数据文件做PDR测试:\n" );
     printf( "    %s --dataset-dir \"./test_data/sensor_data\" --output-path \"./Trajectory.csv\"\n", prog_name );
+    printf( "生成UBODT文件:\n" );
+    printf( "    %s --network ./network/edges.shp --ubodt ./ubodt.txt --delta 0.02\n", prog_name );
     printf( "\n\n" );
 }
 
@@ -79,7 +90,7 @@ int main( int argc, char** argv )
     // 禁用自动错误提示
     opterr = 0;
 
-    while ( ( opt = getopt_long( argc, argv, "c:t:d:x:y:o:r:eh", long_options, &option_index ) ) != -1 )
+    while ( ( opt = getopt_long( argc, argv, "c:t:d:x:y:o:r:n:u:l:eh", long_options, &option_index ) ) != -1 )
     {
         switch ( opt )
         {
@@ -107,12 +118,21 @@ int main( int argc, char** argv )
             case 'r':
                 raw_data_dir_value = optarg;
                 break;
+            case 'n':
+                network_file_value = optarg;
+                break;
+            case 'u':
+                ubodt_file_value = optarg;
+                break;
+            case 'l':
+                delta_value = atof( optarg );
+                break;
             case 'h':
                 show_help( argv[ 0 ] );
                 return 0;
             case '?':
                 // 处理未知选项或缺少参数
-                if ( optopt == 'c' || optopt == 't' || optopt == 'd' || optopt == 'x' || optopt == 'y' || optopt == 'o' || optopt == 'r' )
+                if ( optopt == 'c' || optopt == 't' || optopt == 'd' || optopt == 'x' || optopt == 'y' || optopt == 'o' || optopt == 'r' || optopt == 'n' || optopt == 'u' || optopt == 'l' )
                 {
                     fprintf( stderr, "Option '-%c' requires an argument\n", optopt );
                 }
@@ -143,6 +163,19 @@ int main( int argc, char** argv )
     PDRHandler         pdr_handler;
     PDRTrajectoryArray trajectories_array;
     int                ret;
+
+    // UBODT生成模式
+    if ( network_file_value != NULL && ubodt_file_value != NULL )
+    {
+        ret = fm_pdr_generate_ubodt( network_file_value, ubodt_file_value, delta_value );
+        if ( ret != PDR_RESULT_SUCCESS )
+        {
+            fprintf( stderr, "UBODT生成失败\n" );
+            return -1;
+        }
+        printf( "UBODT文件已生成: %s\n", ubodt_file_value );
+        return 0;
+    }
 
     // 这三个参数只能同时传递一个
     if ( ( train_dir_value != NULL ) + ( dataset_dir_value != NULL ) + ( raw_data_dir_value != NULL ) != 1 )

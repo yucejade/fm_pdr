@@ -16,6 +16,10 @@
 ```bash
 ./PDRTest --train-dir "./test_data/train_data"
 ```
+### 生成UBODT文件
+```bash
+./PDRTest --network ./network/edges.shp --ubodt ./ubodt.txt --delta 0.02
+```
 
 ### 根据数据文件预测航迹
 ```bash

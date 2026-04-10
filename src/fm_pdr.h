@@ -219,6 +219,14 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
 /// @return 0: 保存成功；!=0: 保存失败
 int fm_pdr_save_pdr_data( char* dir_path, PDRData* pdr_data );
 
+/// @fn int fm_pdr_generate_ubodt( const char* network_file, const char* output_file, double delta )
+/// @brief 根据路网文件生成UBODT文件
+/// @param network_file [in] 路网shapefile文件路径
+/// @param output_file [in] 输出UBODT文件路径
+/// @param delta [in] UBODT上界参数
+/// @return 0: 成功; <0: 错误码
+int fm_pdr_generate_ubodt( const char* network_file, const char* output_file, double delta );
+
 // TODO:改为私有函数
 /// @fn int fm_pdr_read_pdr_data( char* dir_path, PDRData* pdr_data )
 /// @brief 读取dir_path目录传感器数据到PDRData结构体中

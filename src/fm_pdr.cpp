@@ -12,6 +12,9 @@
 #include "trajectory_manager.h"
 #include "fmm_app.h"
 #include "fmm_config.h"
+#include <fmm/mm/fmm/ubodt_gen_algorithm.hpp>
+#include <fmm/network/network.hpp>
+#include <fmm/network/network_graph.hpp>
 #include <Eigen/Core>
 #include <cerrno>
 #include <cstdlib>
@@ -1132,4 +1135,38 @@ void fm_pdr_free_pdr_data( PDRData* pdr_data )
     if ( ! pdr_data )
         return;
     cleanup_pdr_data( pdr_data );
+}
+
+int fm_pdr_generate_ubodt( const char* network_file, const char* output_file, double delta )
+{
+    if ( ! network_file || ! output_file )
+        return PDRException::PARAMETER_ERROR;
+    if ( delta <= 0 )
+        return PDRException::PARAMETER_ERROR;
+
+    try
+    {
+        SPDLOG_INFO( "Loading network from {}", network_file );
+        FMM::NETWORK::Network network( network_file, "fid", "u", "v" );
+        SPDLOG_INFO( "Network loaded: {} nodes, {} edges", network.get_node_count(), network.get_edge_count() );
+
+        FMM::NETWORK::NetworkGraph graph( network );
+        FMM::MM::UBODTGenAlgorithm ubodt_gen( network, graph );
+
+        SPDLOG_INFO( "Generating UBODT to {} with delta={}", output_file, delta );
+        std::string result = ubodt_gen.generate_ubodt( output_file, delta, false, true );
+        SPDLOG_INFO( "{}", result );
+
+        return PDRException::SUCCESS;
+    }
+    catch ( const std::exception& e )
+    {
+        std::cerr << "[StdError] " << e.what() << std::endl;
+        return PDRException::GENERAL_ERROR;
+    }
+    catch ( ... )
+    {
+        std::cerr << "[Unknown Error]" << std::endl;
+        return PDRException::UNKNOWN;
+    }
 }
