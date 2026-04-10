@@ -24,7 +24,6 @@
 
 ### 根据数据文件预测航迹
 ```bash
-./PDRTest --dataset-dir "./test_data/sensor_data" --output-path "./Trajectory.csv"
 ```
 
 ### 接入传感器实时预测航迹

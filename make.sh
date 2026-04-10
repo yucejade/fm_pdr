@@ -96,26 +96,26 @@ build_thirdparty() {
         ../../../../thirdparty/fmm//ncurses-6.6/configure --with-shared --disable-widec --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
         make install
         cd ../../../.. || exit 1
-        
+
         # 编译readline库
         mkdir -p build/thirdparty/fmm/readline && cd build/thirdparty/fmm/readline || exit 1
         export bash_cv_termcap_lib=ncurses
         ../../../../thirdparty/fmm/readline/configure --with-curses CPPFLAGS="-I${PACKAGE_PATH}/include" CFLAGS="-I${PACKAGE_PATH}/include" LDFLAGS="-L${PACKAGE_PATH}/lib" SHLIB_LIBS="-lncurses" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
         make install
         cd ../../../.. || exit 1
-        
+
         # 编译sqlite库
         mkdir -p build/thirdparty/fmm/sqlite-src-3510300 && cd build/thirdparty/fmm/sqlite-src-3510300 || exit 1
         ../../../../thirdparty/fmm/sqlite-src-3510300/configure --disable-readline CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
         make install
         cd ../../../.. || exit 1
-        
+
 #       # 编译libminizip库
 #       cd thirdparty/fmm/libminizip-cmake || exit 1
 #       cmake -B ../../../build/thirdparty/fmm/libminizip-cmake -DCMAKE_POLICY_VERSION_MINIMUM=3.5 -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
 #       make -C ../../../build/thirdparty/fmm/libminizip-cmake install
 #       cd ../../.. || exit 1
-        
+
 #       # 编译libtiff库
 #       cd thirdparty/fmm/libtiff-master || exit 1
 #       cmake -B ../../../build/thirdparty/fmm/libtiff-master -DCMAKE_INSTALL_PREFIX=../../../build/package -S .
@@ -193,7 +193,7 @@ build_thirdparty() {
         cmake -B ../../../build/thirdparty/fmm/fmm-master -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -DCMAKE_BUILD_TYPE=release -DFMM_INSTALL_HEADER=yes -S .
         make -C ../../../build/thirdparty/fmm/fmm-master install
         cd ../../.. || exit 1
- 
+
         echo "Thirdparty build completed."
     else
         echo "thirdparty directory not found, build failed."
@@ -214,7 +214,7 @@ build_pdr() {
         cd .. || exit 1
 
         doxygen Doxyfile
-        rm build/package/docs -fr && mv -f docs build/package
+        rm build/package/docs -fr && cp -fr docs build/package
 
         echo "PDR build completed."
     else
