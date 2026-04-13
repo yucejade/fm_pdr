@@ -91,22 +91,23 @@ build_thirdparty() {
         cd ../.. || exit 1
 
         ### 编译fmm依赖库
-        # 编译ncurses库
-        mkdir -p build/thirdparty/fmm//ncurses-6.6 && cd build/thirdparty/fmm//ncurses-6.6 || exit 1
-        ../../../../thirdparty/fmm//ncurses-6.6/configure --with-shared --disable-widec --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
-        make install
-        cd ../../../.. || exit 1
+#       # 编译ncurses库
+#       mkdir -p build/thirdparty/fmm//ncurses-6.6 && cd build/thirdparty/fmm//ncurses-6.6 || exit 1
+#       ../../../../thirdparty/fmm//ncurses-6.6/configure --with-shared --disable-widec --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+#       make install
+#       cd ../../../.. || exit 1
 
-        # 编译readline库
-        mkdir -p build/thirdparty/fmm/readline && cd build/thirdparty/fmm/readline || exit 1
-        export bash_cv_termcap_lib=ncurses
-        ../../../../thirdparty/fmm/readline/configure --with-curses CPPFLAGS="-I${PACKAGE_PATH}/include" CFLAGS="-I${PACKAGE_PATH}/include" LDFLAGS="-L${PACKAGE_PATH}/lib" SHLIB_LIBS="-lncurses" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
-        make install
-        cd ../../../.. || exit 1
+#       # 编译readline库
+#       mkdir -p build/thirdparty/fmm/readline && cd build/thirdparty/fmm/readline || exit 1
+#       export bash_cv_termcap_lib=ncurses
+#       ../../../../thirdparty/fmm/readline/configure --with-curses CPPFLAGS="-I${PACKAGE_PATH}/include" CFLAGS="-I${PACKAGE_PATH}/include" LDFLAGS="-L${PACKAGE_PATH}/lib" SHLIB_LIBS="-lncurses" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+#       make install
+#       cd ../../../.. || exit 1
 
         # 编译sqlite库
         mkdir -p build/thirdparty/fmm/sqlite-src-3510300 && cd build/thirdparty/fmm/sqlite-src-3510300 || exit 1
-        ../../../../thirdparty/fmm/sqlite-src-3510300/configure --disable-readline CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+#       ../../../../thirdparty/fmm/sqlite-src-3510300/configure --disable-readline CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lreadline -lncurses -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
+        ../../../../thirdparty/fmm/sqlite-src-3510300/configure --disable-readline CFLAGS="-DSQLITE_ENABLE_RTREE=1" LDFLAGS="-L${PACKAGE_PATH}/lib -lz -lm" --prefix=$(pwd)/../../../package --build=${BUILD_TRIPLET}
         make install
         cd ../../../.. || exit 1
 
