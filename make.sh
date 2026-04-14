@@ -131,7 +131,7 @@ build_thirdparty() {
 
         # 编译PROJ库
         cd thirdparty/fmm/PROJ || exit 1
-        cmake -B ../../../build/thirdparty/fmm/PROJ -DEXE_SQLITE3=../../../build/package/bin/sqlite3 -DENABLE_CURL=OFF -DBUILD_TESTING=OFF -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -S .
+        cmake -B ../../../build/thirdparty/fmm/PROJ -DENABLE_TIFF=OFF -DEXE_SQLITE3=../../../build/package/bin/sqlite3 -DENABLE_CURL=OFF -DBUILD_TESTING=OFF -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX=../../../build/package -DCMAKE_PREFIX_PATH=../../../build/package -S .
         make -C ../../../build/thirdparty/fmm/PROJ install
         cd ../../.. || exit 1
 
@@ -179,6 +179,9 @@ build_thirdparty() {
           -DCMAKE_BUILD_TYPE=release \
           -DCMAKE_INSTALL_PREFIX=../../../build/package \
           -DCMAKE_PREFIX_PATH=../../../build/package \
+          -DBUILD_TESTING=OFF \
+	  -DPROJ_ROOT=../../../build/package \
+	  -DGEOS_ROOT=../../../build/package \
 	  -DGDAL_USE_EXTERNAL_LIBS=OFF \
 	  -DGDAL_USE_PROJ=ON \
 	  -DGDAL_USE_GEOS=ON \
