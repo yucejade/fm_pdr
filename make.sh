@@ -180,15 +180,15 @@ build_thirdparty() {
           -DCMAKE_INSTALL_PREFIX=../../../build/package \
           -DCMAKE_PREFIX_PATH=../../../build/package \
           -DBUILD_TESTING=OFF \
-	  -DPROJ_ROOT=../../../build/package \
-	  -DGEOS_ROOT=../../../build/package \
-	  -DGDAL_USE_EXTERNAL_LIBS=OFF \
-	  -DGDAL_USE_PROJ=ON \
-	  -DGDAL_USE_GEOS=ON \
-	  -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
-	  -DOGR_BUILD_OPTIONAL_DRIVERS=OFF \
-	  -DOGR_ENABLE_DRIVER_SHAPE=ON \
-	  -DBUILD_PYTHON_BINDINGS=OFF
+          -DPROJ_ROOT=../../../build/package \
+          -DGEOS_ROOT=../../../build/package \
+          -DGDAL_USE_EXTERNAL_LIBS=OFF \
+          -DGDAL_USE_PROJ=ON \
+          -DGDAL_USE_GEOS=ON \
+          -DGDAL_BUILD_OPTIONAL_DRIVERS=OFF \
+          -DOGR_BUILD_OPTIONAL_DRIVERS=OFF \
+          -DOGR_ENABLE_DRIVER_SHAPE=ON \
+          -DBUILD_PYTHON_BINDINGS=OFF
         make -C ../../../build/thirdparty/fmm/gdal install
         cd ../../.. || exit 1
 
