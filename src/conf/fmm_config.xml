@@ -6,7 +6,9 @@
     </ubodt>
     <network>
       <file>../conf/network/edges.shp</file>
-      <id>id</id>
+      <id>fid</id>
+      <source>u</source>
+      <target>v</target>
     </network>
     <gps>
       <file>../data/trips.shp</file>

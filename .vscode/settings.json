@@ -74,5 +74,6 @@
         "charconv": "cpp",
         "source_location": "cpp",
         "core": "cpp"
-    }
+    },
+    "git.ignoreLimitWarning": true
 }

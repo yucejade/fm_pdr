@@ -237,7 +237,7 @@ int main( int argc, char** argv )
             if ( ret < PDR_RESULT_SUCCESS )
             {
                 fm_pdr_uninit( &pdr_handler );
-                fprintf( stderr, "启动行人航迹推算程序时发生错误\n" );
+                fprintf( stderr, "预测行人航迹推算程序时发生错误\n" );
                 return -1;
             }
 

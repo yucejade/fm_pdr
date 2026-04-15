@@ -24,6 +24,26 @@
             //"preLaunchTask": "编译C++文件",
         },
         {
+            "name": "C-生成UBODT文件",
+            "request": "launch",
+            "type": "cppdbg",
+            "program": "${workspaceFolder}/build/package/bin/PDRTest",
+            "args": [
+                "-n",
+                "../conf/network/edges.shp",
+                "-u",
+                "./ubodt.txt",
+                "-l",
+                "0.02"
+            ],
+            "stopAtEntry": false,
+            "cwd": "${workspaceFolder}/build/package/bin",
+            "environment": [],
+            "externalConsole": false,
+            "MIMode": "gdb",
+            //"preLaunchTask": "编译C++文件",
+        },
+        {
             "name": "C-基于数据文件做PDR测试",
             "request": "launch",
             "type": "cppdbg",
