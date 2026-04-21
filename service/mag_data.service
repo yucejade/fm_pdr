@@ -1,11 +1,11 @@
 [Unit]
 Description=Magnetometer Service
 After=network.target
-ConditionPathExists=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/mag_calib4
+ConditionPathExists=/home/kevin/fm_pdr/build/package/bin/mag_calib4
 
 [Service]
 Type=simple
-WorkingDirectory=/home/kevin/Dev/yuce/fm_pdr/build/package/bin
+WorkingDirectory=/home/kevin/fm_pdr/build/package/bin
 User=kevin
 
 # 清理残留文件
@@ -19,7 +19,7 @@ User=kevin
 #     fi'
 
 # 启动主程序
-ExecStart=/home/kevin/Dev/yuce/fm_pdr/build/package/bin/mag_calib4 \
+ExecStart=/home/kevin/fm_pdr/build/package/bin/mag_calib4 \
     -t 0 \
     -d ./mag_calib_data \
     -i -1

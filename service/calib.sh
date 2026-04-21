@@ -8,7 +8,7 @@ echo "开始校准倒计时:1"
 sleep 1
 echo "开始校准!!!"
 
-export PACKAGE_PATH=/home/kevin/Dev/yuce/fm_pdr/build/package
+export PACKAGE_PATH=/home/kevin/fm_pdr/build/package
 rm ${PACKAGE_PATH}/bin/mag_calib_data -fr
 sudo systemctl start mag_data.service
 

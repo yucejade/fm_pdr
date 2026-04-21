@@ -8,17 +8,17 @@
 // #include "magnetometer-calibration.h"
 #include "SensorData.h"
 #include "SixParametersCorrector.h"
-#include "pdr.h"
-#include "trajectory_manager.h"
 #include "fmm_app.h"
 #include "fmm_config.h"
-#include <fmm/mm/fmm/ubodt_gen_algorithm.hpp>
-#include <fmm/network/network.hpp>
-#include <fmm/network/network_graph.hpp>
+#include "pdr.h"
+#include "trajectory_manager.h"
 #include <Eigen/Core>
 #include <cerrno>
 #include <cstdlib>
 #include <cstring>
+#include <fmm/mm/fmm/ubodt_gen_algorithm.hpp>
+#include <fmm/network/network.hpp>
+#include <fmm/network/network_graph.hpp>
 #include <fstream>
 #include <iostream>
 #include <moodycamel/concurrentqueue.h>
@@ -36,6 +36,12 @@ typedef enum _FmPDRStatus
     PDR_RUNNING
 } FmPDRStatus;
 
+typedef struct _NewPosition
+{
+    Eigen::MatrixXd position;
+    Eigen::MatrixXd matched_position;
+} NewPosition;
+
 typedef struct _FmPDRHandler
 {
     std::string        m_config_dir;        // 配置文件目录
@@ -48,10 +54,10 @@ typedef struct _FmPDRHandler
     char*              m_sensor_data_path;  // PDR数据文件路径
     fm_device_handle_t m_device_handle;     // 设备操作句柄
     // CFmMagnetometerCalibration*                  m_mag_calibration;   // 磁力计校准句柄
-    SixParametersCorrector*                         m_loaded_corrector;  // 矫正器句柄
-    int                                             m_status;            // 0:停止,1:启动
-    std::thread                                     m_worker;            // 子线程句柄
-    moodycamel::ConcurrentQueue< Eigen::MatrixXd* > queue;               // 轨迹队列
+    SixParametersCorrector*                                        m_loaded_corrector;  // 矫正器句柄
+    int                                                            m_status;            // 0:停止,1:启动
+    std::thread                                                    m_worker;            // 子线程句柄
+    moodycamel::ConcurrentQueue< std::vector< Eigen::MatrixXd* > > queue;               // 轨迹队列
 
     // 注意：创建PDR对象时，不能使用传入参数config，需要全局生命周期的m_config
     _FmPDRHandler( const PDRConfig& config, const FMMConfig& fmm_config, const CFmDataManager& train_data, Eigen::MatrixXd& train_position )
@@ -475,15 +481,23 @@ static void do_pdr( FmPDRHandler* hdl )
                 is_first_data = false;
             }
 
+            // 追加最近测量（配置项pdr_duration）的每步轨迹点到tm，tm记录导航开始到目前为止所有轨迹
             tm.append( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
-            Eigen::MatrixXd process_trajectory = tm.process_trajectory( hdl->m_config.match_duration );
+            // 按配置项match_duration设置的时间间隔稀释轨迹点
+            Eigen::MatrixXd* origin_trajectory = new Eigen::MatrixXd( tm.process_trajectory( hdl->m_config.match_duration ) );
 
-            Eigen::MatrixXd predict_trajectories = hdl->m_fmm.match( process_trajectory );
+            // 将稀释后的轨迹点输入FMM模型，得到预测轨迹
+            Eigen::MatrixXd* predict_trajectories = new Eigen::MatrixXd( hdl->m_fmm.match( *origin_trajectory ) );
+
+            // 传出原始轨迹和预测轨迹
+            std::vector< Eigen::MatrixXd* > trajectory;
+            trajectory.push_back( origin_trajectory );
+            trajectory.push_back( predict_trajectories );
 
             // 导航结果写入无锁队列
-            if ( predict_trajectories.rows() > 0 )
-                hdl->queue.enqueue( new Eigen::MatrixXd( predict_trajectories.row( predict_trajectories.rows() - 1 ) ) );    // 取最后一行数据作为最新位置点
+            if ( origin_trajectory->rows() > 0 && predict_trajectories->rows() > 0 )
+                hdl->queue.enqueue( trajectory );
         }
         catch ( const PDRException& e )
         {
@@ -519,9 +533,9 @@ int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* 
 
     try
     {
-        const std::string&                   config_path     = std::string( config_dir ) + "//" + "config.json";
+        const std::string&              config_path     = std::string( config_dir ) + "//" + "config.json";
         PDRConfig                       config          = CFmJSONOperator::readPDRConfigFromJson( config_path.c_str() );
-        const std::string&                   fmm_config_path = std::string( config_dir ) + "//" + "fmm_config.xml";
+        const std::string&              fmm_config_path = std::string( config_dir ) + "//" + "fmm_config.xml";
         FMMConfig                       fmm_config( fmm_config_path );
         std::unique_ptr< FmPDRHandler > h;
 
@@ -663,8 +677,11 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path )
         // VectorXd pos_y          = hdl->m_data_loader->get_true_data( TRUE_DATA_FIELD_LONGITUDE );
         // double   x0             = pos_x[ 0 ];
         // double   y0             = pos_y[ 0 ];
-        double x0 = 32.11199920;
-        double y0 = 118.9528682;
+
+        double x0 = 123.45001915081717;
+        double y0 = 41.71512697704802;
+        // double x0 = 123.456094;
+        // double y0 = 41.71748;
 
         hdl->m_si               = hdl->m_pdr.start( x0, y0, *data_loader_guard );
         hdl->m_data_loader      = data_loader_guard.release();
@@ -699,8 +716,10 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
     TrajectoryVecGuard trajectories_vector_guard( new std::vector< PDRTrajectory* >(),  // 初始化时分配vector
                                                   free_trajectory_vector                // 自定义删除器
     );
+    Eigen::MatrixXd*   origin_trajectory    = nullptr;
     Eigen::MatrixXd*   predict_trajectories = nullptr;
-    PDRTrajectory*     trajs                = nullptr;
+    PDRTrajectory*     origin_trajs         = nullptr;
+    PDRTrajectory*     matched_trajs        = nullptr;
 
     try
     {
@@ -711,27 +730,34 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         {
             TrajectoryManager tm( 4 );
             tm.append( hdl->m_pdr.pdr( hdl->m_si, *hdl->m_data_loader ) );
-            Eigen::MatrixXd  process_trajectory   = tm.process_trajectory( hdl->m_config.match_duration );
-            
-            predict_trajectories = new Eigen::MatrixXd( hdl->m_fmm.match( process_trajectory ) );
 
-            ret = eigenToPDRTrajectory( *predict_trajectories, &trajs );
-            trajectories_vector_guard->push_back( trajs );
+            origin_trajectory    = new Eigen::MatrixXd( tm.process_trajectory( hdl->m_config.match_duration ) );
+            predict_trajectories = new Eigen::MatrixXd( hdl->m_fmm.match( *origin_trajectory, true ) );
+
+            ret = eigenToPDRTrajectory( *origin_trajectory, &origin_trajs );
+            trajectories_vector_guard->push_back( origin_trajs );
+            ret = eigenToPDRTrajectory( *predict_trajectories, &matched_trajs );
+            trajectories_vector_guard->push_back( matched_trajs );
 
             trajectories_array->array = trajectories_vector_guard->data();
-            trajectories_array->count = 1;
+            trajectories_array->count = trajectories_vector_guard->size();
             trajectories_array->ptr   = trajectories_vector_guard.release();
         }
         else
         {
             while ( true )
             {
-                bool is_ok = hdl->queue.try_dequeue( predict_trajectories );
+                std::vector<Eigen::MatrixXd*> trajectory;
+                bool is_ok = hdl->queue.try_dequeue( trajectory );
                 if ( ! is_ok )
                     break;
 
-                ret += eigenToPDRTrajectory( *predict_trajectories, &trajs );
-                trajectories_vector_guard->push_back( trajs );
+                origin_trajectory    = trajectory[ 0 ];
+                predict_trajectories = trajectory[ 1 ];
+                ret = eigenToPDRTrajectory( *origin_trajectory, &origin_trajs );
+                trajectories_vector_guard->push_back( origin_trajs );
+                ret = eigenToPDRTrajectory( *predict_trajectories, &matched_trajs );
+                trajectories_vector_guard->push_back( matched_trajs );
             }
 
             // 转换为C结构体传出
@@ -780,8 +806,8 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
 
             // 构建符合append_to_csv要求的列数据结构
             std::vector< std::pair< std::string, std::vector< double > > > columns = { { quote_header( "Time (s)" ), { trajectories->time, trajectories->time + trajectories->length } },
-                                                                                       { quote_header( "Latitude (°)" ), { trajectories->x, trajectories->x + trajectories->length } },
-                                                                                       { quote_header( "Longitude (°)" ), { trajectories->y, trajectories->y + trajectories->length } },
+                                                                                       { quote_header( "Longitude (°)" ), { trajectories->x, trajectories->x + trajectories->length } },
+                                                                                       { quote_header( "Latitude (°)" ), { trajectories->y, trajectories->y + trajectories->length } },
                                                                                        { quote_header( "Height (m)" ), {} },
                                                                                        { quote_header( "Velocity (m/s)" ), {} },
                                                                                        { quote_header( "Direction (°)" ), { trajectories->direction, trajectories->direction + trajectories->length } },

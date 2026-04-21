@@ -12,6 +12,7 @@
 
 #include "fmm_config.h"
 #include <Eigen/Dense>
+#include <iostream>
 
 /**
  * Class of fmm command line program
@@ -28,9 +29,9 @@ public:
     /**
      * Match the fmm program
      */
-    Eigen::MatrixXd  match( const Eigen::MatrixXd& traj_matrix );
+    Eigen::MatrixXd  match( const Eigen::MatrixXd& traj_matrix, bool is_all = false );
 private:
-    const FMMConfig&         config_;
+    FMMConfig                config_;
     FMM::NETWORK::Network         network_;
     FMM::NETWORK::NetworkGraph    ng_;
     std::shared_ptr< UBODT > ubodt_;

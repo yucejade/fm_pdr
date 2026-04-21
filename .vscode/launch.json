@@ -13,7 +13,7 @@
                 "-t",
                 "test_data/train_data",
                 "-o",
-                "./Trajectory.csv",
+                "Trajectory.csv",
                 "-e"
             ],
             "stopAtEntry": false,
@@ -32,7 +32,7 @@
                 "-n",
                 "../conf/network/edges.shp",
                 "-u",
-                "./ubodt.txt",
+                "ubodt.txt",
                 "-l",
                 "0.02"
             ],
@@ -52,7 +52,7 @@
                 "-d",
                 "output_sensor_data",
                 "-o",
-                "./Trajectory.csv",
+                "Trajectory.csv",
                 "-e"
             ],
             "stopAtEntry": false,
@@ -69,13 +69,13 @@
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-x",
-                "32.11199920",
+                "123.45001915081717",
                 "-y",
-                "118.9528682",
+                "41.71512697704802",
                 "-o",
-                "./Trajectory.csv",
+                "Trajectory.csv",
                 "-r",
-                "./output_sensor_data",
+                "output_sensor_data",
                 "-e"
             ],
             "stopAtEntry": false,
@@ -190,7 +190,7 @@
                 "-t",
                 0,
                 "-d",
-                "./mag_calib_data",
+                "mag_calib_data",
                 "-i",
                 "-1"
             ],
@@ -210,9 +210,9 @@
                 "-t",
                 "1",
                 "-d",
-                "./mag_calib_data/Magnetometer.csv",
+                "mag_calib_data/Magnetometer.csv",
                 "-o",
-                "./mag_calib_data/mag_calibration.csv"
+                "mag_calib_data/mag_calibration.csv"
             ],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/package/bin",
@@ -230,7 +230,7 @@
                 "-t",
                 "2",
                 "-c",
-                "./mag_calib_data/mag_calibration.csv",
+                "mag_calib_data/mag_calibration.csv",
                 "-i",
                 "-1"
             ],

@@ -12,7 +12,7 @@ using namespace FMM::CORE;
 using namespace FMM::NETWORK;
 using namespace FMM::MM;
 
-Eigen::MatrixXd FMMApp::match( const Eigen::MatrixXd& traj_matrix )
+Eigen::MatrixXd FMMApp::match( const Eigen::MatrixXd& traj_matrix, bool is_all )
 {
     auto                      start_time = UTIL::get_current_time();
     FastMapMatch              mm_model( network_, ng_, ubodt_ );
@@ -26,20 +26,36 @@ Eigen::MatrixXd FMMApp::match( const Eigen::MatrixXd& traj_matrix )
 
         if ( ! result.cpath.empty() && ! result.opt_candidate_path.empty() )
         {
-            // 取最后一个点的匹配结果
-            const auto& last_matched = result.opt_candidate_path.back();
-            double      matched_x    = boost::geometry::get< 0 >( last_matched.c.point );
-            double      matched_y    = boost::geometry::get< 1 >( last_matched.c.point );
+            int num_points = result.opt_candidate_path.size();
 
-            // 时间戳和方向使用 traj_matrix 中最后一个点的原始数据
-            int    last_row   = traj_matrix.rows() - 1;
-            double timestamp  = traj_matrix( last_row, 0 );
-            double direction  = traj_matrix.cols() > 3 ? traj_matrix( last_row, 3 ) : 0.0;
-
-            // 输出格式: [timestamp, matched_x, matched_y, direction]
-            Eigen::MatrixXd out( 1, 4 );
-            out << timestamp, matched_x, matched_y, direction;
-            return out;
+            if ( is_all )
+            {
+                // 返回全部匹配轨迹点
+                Eigen::MatrixXd out( num_points, 4 );
+                for ( int i = 0; i < num_points; ++i )
+                {
+                    const auto& matched = result.opt_candidate_path[i];
+                    double      matched_x = boost::geometry::get< 0 >( matched.c.point );
+                    double      matched_y = boost::geometry::get< 1 >( matched.c.point );
+                    double timestamp = traj_matrix( i, 0 );
+                    double direction = traj_matrix.cols() > 3 ? traj_matrix( i, 3 ) : 0.0;
+                    out.row( i ) << timestamp, matched_x, matched_y, direction;
+                }
+                return out;
+            }
+            else
+            {
+                // 返回最后一个匹配点
+                const auto& last_matched = result.opt_candidate_path.back();
+                double      matched_x    = boost::geometry::get< 0 >( last_matched.c.point );
+                double      matched_y    = boost::geometry::get< 1 >( last_matched.c.point );
+                int    last_row   = traj_matrix.rows() - 1;
+                double timestamp  = traj_matrix( last_row, 0 );
+                double direction  = traj_matrix.cols() > 3 ? traj_matrix( last_row, 3 ) : 0.0;
+                Eigen::MatrixXd out( 1, 4 );
+                out << timestamp, matched_x, matched_y, direction;
+                return out;
+            }
         }
     }
 

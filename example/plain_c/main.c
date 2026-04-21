@@ -8,6 +8,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
 // 全局参数存储
 int    evaluation_value   = 0;
@@ -244,7 +245,27 @@ int main( int argc, char** argv )
             // 保存推算出的航迹
             if ( output_path_value )
             {
-                ret = fm_pdr_save_trajectory_data( ( char* )output_path_value, &trajectories_array );
+                char filename[256];
+
+                strcpy(filename, "origin_");
+                strcat(filename, output_path_value);
+                // 将原始轨迹保存为csv文件，方便调试和验证
+                PDRTrajectoryArray single_traj = { &trajectories_array.array[0], 1, NULL };
+                ret = fm_pdr_save_trajectory_data( filename, &single_traj );
+                if ( ret != PDR_RESULT_SUCCESS )
+                {
+                    fm_pdr_free_trajectory( &trajectories_array );
+                    fm_pdr_uninit( &pdr_handler );
+                    fprintf( stderr, "行人航迹数据保存失败\n" );
+                    return -1;
+                }
+
+                memset(filename, 0, sizeof(filename));
+                strcpy(filename, "matched_");
+                strcat(filename, output_path_value);
+                // 将预测轨迹保存为csv文件，方便调试和验证
+                single_traj.array = &trajectories_array.array[1];
+                ret = fm_pdr_save_trajectory_data( filename, &single_traj );
                 if ( ret != PDR_RESULT_SUCCESS )
                 {
                     fm_pdr_free_trajectory( &trajectories_array );
@@ -310,7 +331,26 @@ int main( int argc, char** argv )
                 // 保存推算出的航迹
                 if ( output_path_value )
                 {
-                    ret = fm_pdr_save_trajectory_data( ( char* )output_path_value, &trajectories_array );
+                    char filename[256];
+
+                    strcpy(filename, "origin_");
+                    strcat(filename, output_path_value);
+                    
+                    // 将原始轨迹保存为csv文件，方便调试和验证
+                    PDRTrajectoryArray single_traj = { &trajectories_array.array[0], 1, NULL };
+                    ret = fm_pdr_save_trajectory_data( filename, &single_traj );
+                    if ( ret != PDR_RESULT_SUCCESS )
+                    {
+                        fm_pdr_free_trajectory( &trajectories_array );
+                        fprintf( stderr, "行人航迹数据保存失败\n" );
+                        continue;
+                    }
+                    // 将预测轨迹保存为csv文件，方便调试和验证
+                    memset(filename, 0, sizeof(filename));
+                    strcpy(filename, "matched_");
+                    strcat(filename, output_path_value);
+                    single_traj.array = &trajectories_array.array[1];
+                    ret = fm_pdr_save_trajectory_data( filename, &single_traj );
                     if ( ret != PDR_RESULT_SUCCESS )
                     {
                         fm_pdr_free_trajectory( &trajectories_array );

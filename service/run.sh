@@ -1,7 +1,7 @@
 #!/bin/bash
 
 # 定义环境变量（修复原脚本的变量替换语法错误）
-export PACKAGE_PATH="/home/kevin/Dev/yuce/fm_pdr/build/package"
+export PACKAGE_PATH="/home/kevin/fm_pdr/build/package"
 
 # 检查pdr_test.service服务状态
 check_service_status() {

@@ -61,19 +61,22 @@ public:
     Eigen::MatrixXd process_trajectory( int match_duration )
     {
         // 确保轨迹有效且包含时间列
-        if ( m_data->rows() == 0 || m_data->cols() < 4 )
+        if ( m_usedRows == 0 || m_data->cols() < 4 )
         {
             return Eigen::MatrixXd();
         }
 
+        // 只使用有效行数据，排除预分配但未写入的垃圾行
+        Eigen::MatrixXd valid_data = m_data->topRows( m_usedRows );
+
         // 1. 只传入 trajectory 的时间戳列作为参数（提取第 0 列）
-        const Eigen::VectorXd& original_times = m_data->col( 0 );
+        Eigen::VectorXd original_times = valid_data.col( 0 );
 
         // 2. 获取经过新逻辑处理过的时间戳序列
         Eigen::VectorXd target_times = generate_target_times( original_times, match_duration );
 
         // 3. 调用 linear_interpolation 函数，获取新时间序列上的插值结果
-        return linear_interpolation( target_times, *( m_data.get() ) );
+        return linear_interpolation( target_times, valid_data );
     }
 private:
     size_t find_interval( double t, const Eigen::MatrixXd& trajectory ) const

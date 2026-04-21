@@ -141,9 +141,9 @@ typedef void* PDRHandler;
 /// @fn int fm_pdr_init_with_file( char* config_dir, char* train_file_path, PDRHandler* handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 初始化PDR算法
 /// @param config_dir [in] 配置文件路径
-/// @param train_file_path [in] PDR训练数据路径，传递NULL表示不进行训练，只进行预测（使用配置项中的模型路径）和读取配置
+/// @param train_file_path [in] PDR训练数据路径，通过训练数据可以测试出行人的步态特征（步频，步长），传递NULL表示已有使用配置项中的模型路径。
 /// @param handler [out] PDR句柄
-/// @param trajectories_array [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
+/// @param trajectories_array [out] 当train_file_path有值时，传出在训练数据上的原始轨迹点，供调试使用；当train_file_path为NULL时，传出NULL值
 /// @return >0: 训练生成位置点数量
 ///         =0: trajectories传递NULL值并且初始化成功
 ///         <0: 错误码

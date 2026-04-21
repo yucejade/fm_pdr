@@ -1,0 +1,194 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "https://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+<meta http-equiv="Content-Type" content="text/xhtml;charset=UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=9"/>
+<meta name="generator" content="Doxygen 1.9.1"/>
+<meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>FmPDR: PDR算法库</title>
+<link href="tabs.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="jquery.js"></script>
+<script type="text/javascript" src="dynsections.js"></script>
+<link href="search/search.css" rel="stylesheet" type="text/css"/>
+<script type="text/javascript" src="search/searchdata.js"></script>
+<script type="text/javascript" src="search/search.js"></script>
+<link href="doxygen.css" rel="stylesheet" type="text/css" />
+</head>
+<body>
+<div id="top"><!-- do not remove this div, it is closed by doxygen! -->
+<div id="titlearea">
+<table cellspacing="0" cellpadding="0">
+ <tbody>
+ <tr style="height: 56px;">
+  <td id="projectalign" style="padding-left: 0.5em;">
+   <div id="projectname">FmPDR
+   </div>
+  </td>
+ </tr>
+ </tbody>
+</table>
+</div>
+<!-- end header part -->
+<!-- 制作者 Doxygen 1.9.1 -->
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+var searchBox = new SearchBox("searchBox", "search",false,'搜索','.html');
+/* @license-end */
+</script>
+<script type="text/javascript" src="menudata.js"></script>
+<script type="text/javascript" src="menu.js"></script>
+<script type="text/javascript">
+/* @license magnet:?xt=urn:btih:cf05388f2679ee054f2beb29a391d25f4e673ac3&amp;dn=gpl-2.0.txt GPL-v2 */
+$(function() {
+  initMenu('',true,false,'search.php','搜索');
+  $(document).ready(function() { init_search(); });
+});
+/* @license-end */</script>
+<div id="main-nav"></div>
+<!-- window showing the filter options -->
+<div id="MSearchSelectWindow"
+     onmouseover="return searchBox.OnSearchSelectShow()"
+     onmouseout="return searchBox.OnSearchSelectHide()"
+     onkeydown="return searchBox.OnSearchSelectKey(event)">
+</div>
+
+<!-- iframe showing the search results (closed by default) -->
+<div id="MSearchResultsWindow">
+<iframe src="javascript:void(0)" frameborder="0" 
+        name="MSearchResults" id="MSearchResults">
+</iframe>
+</div>
+
+</div><!-- top -->
+<div class="PageDoc"><div class="header">
+  <div class="headertitle">
+<div class="title">PDR算法库 </div>  </div>
+</div><!--header-->
+<div class="contents">
+<div class="textblock"><h1><a class="anchor" id="autotoc_md1"></a>
+项目概述</h1>
+<p>本项目基于树莓派5硬件平台，结合TDK40607P(IMU)和MMC56x3磁力计，采用行人航迹跟踪(PDR)方式实现惯性导航功能和程序演示。 本项目参考了<a href="https://github.com/nju-aml2022/Pedestrian-Dead-Reckoning-PDR/tree/main#">NJU-AML2022的PDR项目</a>，并将其从Python环境移植到C++语言环境中。</p>
+<h1><a class="anchor" id="autotoc_md2"></a>
+主要特性</h1>
+<ul>
+<li>支持数据文件方式和实时传感器数据采集模式</li>
+<li>提供完整的C语言API接口</li>
+<li>支持模型训练与轨迹预测</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md3"></a>
+示例程序运行</h1>
+<h2><a class="anchor" id="autotoc_md4"></a>
+训练PDR模型</h2>
+<div class="fragment"><div class="line">./PDRTest --train-dir &quot;./test_data/train_data&quot;</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md5"></a>
+生成UBODT文件</h2>
+<div class="fragment"><div class="line">./PDRTest --network ./network/edges.shp --ubodt ./ubodt.txt --delta 0.02</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md6"></a>
+根据数据文件预测航迹</h2>
+<div class="fragment"></div><!-- fragment --><h2><a class="anchor" id="autotoc_md7"></a>
+接入传感器实时预测航迹</h2>
+<div class="fragment"><div class="line">./PDRTest -x 32.11199920 -y 118.9528682 --output-path &quot;./Trajectory.csv&quot;</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md8"></a>
+获取磁力计原始数据</h2>
+<div class="fragment"><div class="line">./mag_calib4 -t 0 -d &quot;./mag_calib_data&quot; -i -1</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md9"></a>
+根据磁力计数据文件生成校准参数</h2>
+<div class="fragment"><div class="line">./mag_calib4 -t 1 -d &quot;./mag_calib_data/Magnetometer.csv&quot; -o &quot;./mag_calib_data/mag_calibration.csv&quot;</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md10"></a>
+展示校准前后的实时磁力计数据</h2>
+<div class="fragment"><div class="line">./mag_calib4 -t 2 -c &quot;./mag_calib_data/mag_calibration.csv&quot; -i -1</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md11"></a>
+编译构建</h1>
+<div class="fragment"><div class="line">./make.sh rebuild</div>
+</div><!-- fragment --><h2><a class="anchor" id="autotoc_md12"></a>
+编译输出内容</h2>
+<p>构建完成后，在build/package目录下生成： </p><div class="fragment"><div class="line">build/package/</div>
+<div class="line">├── bin/                   # 可执行文件</div>
+<div class="line">│   ├── PDRTest            # 主测试程序</div>
+<div class="line">│   └── mag_calib4         # 磁力计校准测试程序</div>
+<div class="line">│   └── [其它测试程序...]   # 其它测试程序</div>
+<div class="line">├── conf/                  # 帮助文档</div>
+<div class="line">│   └── config.json        # 配置文件</div>
+<div class="line">├── docs/                  # 帮助文档</div>
+<div class="line">├── lib/                   # 静态库文件</div>
+<div class="line">│   ├── libpdr.a           # PDR核心库</div>
+<div class="line">│   └── [第三方库文件...]</div>
+<div class="line">└── include/               # 头文件</div>
+<div class="line">    ├── fm_pdr.h           # PDR接口头文件</div>
+<div class="line">    └── [第三方头文件...]</div>
+</div><!-- fragment --><h1><a class="anchor" id="autotoc_md13"></a>
+第三方依赖库</h1>
+<p>构建过程会自动编译以下依赖库：</p><ul>
+<li>OpenBLAS: 线性代数计算库</li>
+<li>Eigen: C++模板库，用于线性代数运算</li>
+<li>Fusion: 传感器融合库</li>
+<li>IIR1: 数字滤波器库</li>
+<li>GeographicLib: 地理坐标计算库</li>
+<li>DLib: 机器学习库</li>
+<li>RapidCSV: CSV文件解析库</li>
+<li>RapidJSON: JSON解析库</li>
+<li>Libgpiod: GPIO设备控制库</li>
+<li>ConcurrentQueue: 并发队列库</li>
+</ul>
+<h1><a class="anchor" id="autotoc_md14"></a>
+集成说明</h1>
+<p>编译后，在include目录下生成fm_pdr.h头文件，lib目录下生成libpdr.a库文件用于提供给第三方集成。 本算法大致工作过程如下：</p><ul>
+<li>准备阶段<ol type="1">
+<li>采集传感器原始数据</li>
+<li>校准磁力计数据，并将校准结果以文件形式输出</li>
+<li>训练算法模型，并将训练结果以文件形式输出</li>
+</ol>
+</li>
+<li>行人航迹预测(PDR)<ol type="1">
+<li>输入内容为配置文件，原始传感器数据，磁力计校准结果，模型训练结果</li>
+<li>根据输入内容结合PDR算法预测行人位置和方向</li>
+</ol>
+</li>
+</ul>
+<h2><a class="anchor" id="autotoc_md15"></a>
+配置文件说明</h2>
+<table class="markdownTable">
+<tr class="markdownTableHead">
+<th class="markdownTableHeadNone">参数名   </th><th class="markdownTableHeadNone">默认值   </th><th class="markdownTableHeadNone">说明    </th></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>sample_rate</code>   </td><td class="markdownTableBodyNone">50   </td><td class="markdownTableBodyNone">采样频率（Hz）    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>pdr_duration</code>   </td><td class="markdownTableBodyNone">4   </td><td class="markdownTableBodyNone">PDR持续时间（秒）    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>model_name</code>   </td><td class="markdownTableBodyNone">"Linear"   </td><td class="markdownTableBodyNone">使用的模型名称    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>model_file_name</code>   </td><td class="markdownTableBodyNone">"model.dat"   </td><td class="markdownTableBodyNone">模型文件名    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>clean_start</code>   </td><td class="markdownTableBodyNone">4   </td><td class="markdownTableBodyNone">开始清理的点数    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>clean_end</code>   </td><td class="markdownTableBodyNone">0   </td><td class="markdownTableBodyNone">结束清理的点数    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>default_east_point</code>   </td><td class="markdownTableBodyNone">50   </td><td class="markdownTableBodyNone">默认东向点    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>move_average</code>   </td><td class="markdownTableBodyNone">10   </td><td class="markdownTableBodyNone">移动平均窗口大小    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>min_distance</code>   </td><td class="markdownTableBodyNone">20   </td><td class="markdownTableBodyNone">最小距离（米）    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>distance_frac_step</code>   </td><td class="markdownTableBodyNone">4.0   </td><td class="markdownTableBodyNone">距离分数步长    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>optimized_mode_ratio</code>   </td><td class="markdownTableBodyNone">0.95   </td><td class="markdownTableBodyNone">优化模式比例    </td></tr>
+<tr class="markdownTableRowEven">
+<td class="markdownTableBodyNone"><code>butter_wn</code>   </td><td class="markdownTableBodyNone">0.0035   </td><td class="markdownTableBodyNone">巴特沃斯滤波器截止频率    </td></tr>
+<tr class="markdownTableRowOdd">
+<td class="markdownTableBodyNone"><code>least_start_point</code>   </td><td class="markdownTableBodyNone">50   </td><td class="markdownTableBodyNone">最少起始点数   </td></tr>
+</table>
+<p>这些配置项通常通过<code>conf/config.json</code>文件进行调整。</p>
+<h1><a class="anchor" id="autotoc_md16"></a>
+API文档</h1>
+<p>请参考package/docs目录和fm_pdr.h头文件</p>
+<h1><a class="anchor" id="autotoc_md17"></a>
+使用示例</h1>
+<p>请参考源码example/plain_c/main.c文件 </p>
+</div></div><!-- contents -->
+</div><!-- PageDoc -->
+<!-- start footer part -->
+<hr class="footer"/><address class="footer"><small>
+制作者&#160;<a href="https://www.doxygen.org/index.html"><img class="footer" src="doxygen.svg" width="104" height="31" alt="doxygen"/></a> 1.9.1
+</small></address>
+</body>
+</html>
