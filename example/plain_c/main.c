@@ -181,7 +181,7 @@ int main( int argc, char** argv )
     int                ret;
 
     memset( &trajectories_array, 0, sizeof( trajectories_array ) );
-    
+
     // UBODT生成模式
     if ( network_file_value != NULL && ubodt_file_value != NULL )
     {
@@ -213,7 +213,7 @@ int main( int argc, char** argv )
         }
 
         // 保存训练数据的航迹
-        if ( output_path_value )
+        if ( output_path_value && trajectories_array.count > 0 )
         {
             ret = fm_pdr_save_trajectory_data( output_path_value, &trajectories_array );
             if ( ret != PDR_RESULT_SUCCESS )
@@ -343,7 +343,7 @@ int main( int argc, char** argv )
                 }
 
                 // 保存推算出的航迹
-                if ( output_path_value )
+                if ( output_path_value && trajectories_array.count > 0 )
                 {
                     char filename[256];
 

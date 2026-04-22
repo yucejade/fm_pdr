@@ -26,7 +26,9 @@ monitor_keyboard() {
             sleep 1
             
             # 处理输出文件
-            mv -f "${PACKAGE_PATH}/bin/Trajectory.csv" "${PACKAGE_PATH}/bin/Trajectory_bak.csv"
+	    # 将实际运动轨迹重命名为Trajectory_real.csv
+            mv -f "${PACKAGE_PATH}/bin/Trajectory.csv" "${PACKAGE_PATH}/bin/Trajectory_real.csv"
+	    # 以传感器文件数据重新测量一次运动轨迹，命名为Trajectory.csv
             "${PACKAGE_PATH}/bin/PDRTest" -d "${PACKAGE_PATH}/bin/output_sensor_data" -o "${PACKAGE_PATH}/bin/Trajectory.csv" -e
             
             echo "服务已停止，文件处理完成！"
