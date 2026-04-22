@@ -165,6 +165,8 @@ int main( int argc, char** argv )
     PDRTrajectoryArray trajectories_array;
     int                ret;
 
+    memset( &trajectories_array, 0, sizeof( trajectories_array ) );
+    
     // UBODT生成模式
     if ( network_file_value != NULL && ubodt_file_value != NULL )
     {
