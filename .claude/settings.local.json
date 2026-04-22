@@ -48,7 +48,8 @@
       "Bash(make)",
       "Bash(make -j1 VERBOSE=1)",
       "Bash(valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes ./PDRTest -d output_sensor_data -o Trajectory.csv -e)",
-      "Bash(echo \"exit code: $?\")"
+      "Bash(echo \"exit code: $?\")",
+      "Bash(command -v bun)"
     ]
   }
 }

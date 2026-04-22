@@ -75,6 +75,21 @@ void sigterm_handler( int signum )
     g_is_running = 0;
 }
 
+// 在路径的文件名部分添加前缀，例如 "/home/user/data.csv" + "origin_" → "/home/user/origin_data.csv"
+static void prefix_filename( const char* prefix, const char* path, char* out, size_t out_size )
+{
+    const char* sep = strrchr( path, '/' );
+    if ( sep )
+    {
+        size_t dir_len = ( size_t )( sep - path ) + 1;
+        snprintf( out, out_size, "%.*s%s%s", (int)dir_len, path, prefix, sep + 1 );
+    }
+    else
+    {
+        snprintf( out, out_size, "%s%s", prefix, path );
+    }
+}
+
 int main( int argc, char** argv )
 {
     struct sigaction sa;
@@ -249,8 +264,7 @@ int main( int argc, char** argv )
             {
                 char filename[256];
 
-                strcpy(filename, "origin_");
-                strcat(filename, output_path_value);
+                prefix_filename( "origin_", output_path_value, filename, sizeof( filename ) );
                 // 将原始轨迹保存为csv文件，方便调试和验证
                 PDRTrajectoryArray single_traj = { &trajectories_array.array[0], 1, NULL };
                 ret = fm_pdr_save_trajectory_data( filename, &single_traj );
@@ -262,9 +276,7 @@ int main( int argc, char** argv )
                     return -1;
                 }
 
-                memset(filename, 0, sizeof(filename));
-                strcpy(filename, "matched_");
-                strcat(filename, output_path_value);
+                prefix_filename( "matched_", output_path_value, filename, sizeof( filename ) );
                 // 将预测轨迹保存为csv文件，方便调试和验证
                 single_traj.array = &trajectories_array.array[1];
                 ret = fm_pdr_save_trajectory_data( filename, &single_traj );
@@ -335,9 +347,8 @@ int main( int argc, char** argv )
                 {
                     char filename[256];
 
-                    strcpy(filename, "origin_");
-                    strcat(filename, output_path_value);
-                    
+                    prefix_filename( "origin_", output_path_value, filename, sizeof( filename ) );
+
                     // 将原始轨迹保存为csv文件，方便调试和验证
                     PDRTrajectoryArray single_traj = { &trajectories_array.array[0], 1, NULL };
                     ret = fm_pdr_save_trajectory_data( filename, &single_traj );
@@ -348,9 +359,7 @@ int main( int argc, char** argv )
                         continue;
                     }
                     // 将预测轨迹保存为csv文件，方便调试和验证
-                    memset(filename, 0, sizeof(filename));
-                    strcpy(filename, "matched_");
-                    strcat(filename, output_path_value);
+                    prefix_filename( "matched_", output_path_value, filename, sizeof( filename ) );
                     single_traj.array = &trajectories_array.array[1];
                     ret = fm_pdr_save_trajectory_data( filename, &single_traj );
                     if ( ret != PDR_RESULT_SUCCESS )
