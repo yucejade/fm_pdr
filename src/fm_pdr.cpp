@@ -444,8 +444,10 @@ static void do_pdr( FmPDRHandler* hdl )
     TrajectoryManager tm( 4 );
     SensorData        sensor_data;
     PDRData           pdr_data;
-    bool              is_first_data = true;
+    bool              is_first_data      = true;
     int               ret;
+    int               last_origin_rows   = 0;
+    int               last_matched_rows  = 0;
 
     memset( &sensor_data, 0x00, sizeof( sensor_data ) );
     memset( &pdr_data, 0x00, sizeof( pdr_data ) );
@@ -484,20 +486,33 @@ static void do_pdr( FmPDRHandler* hdl )
             // 追加最近测量（配置项pdr_duration）的每步轨迹点到tm，tm记录导航开始到目前为止所有轨迹
             tm.append( hdl->m_pdr.pdr( hdl->m_si, data_loader ) );
 
-            // 按配置项match_duration设置的时间间隔稀释轨迹点
-            Eigen::MatrixXd* origin_trajectory = new Eigen::MatrixXd( tm.process_trajectory( hdl->m_config.match_duration ) );
+            // 按配置项match_duration设置的时间间隔稀释轨迹点（完整轨迹，FMM匹配需要）
+            Eigen::MatrixXd full_origin = tm.process_trajectory( hdl->m_config.match_duration );
 
-            // 将稀释后的轨迹点输入FMM模型，得到预测轨迹
-            Eigen::MatrixXd* predict_trajectories = new Eigen::MatrixXd( hdl->m_fmm.match( *origin_trajectory ) );
+            // 将完整稀释轨迹输入FMM模型，得到预测轨迹
+            Eigen::MatrixXd full_matched = hdl->m_fmm.match( full_origin );
 
-            // 传出原始轨迹和预测轨迹
-            std::vector< Eigen::MatrixXd* > trajectory;
-            trajectory.push_back( origin_trajectory );
-            trajectory.push_back( predict_trajectories );
+            int cur_origin_rows = full_origin.rows();
+            int cur_matched_rows = full_matched.rows();
 
-            // 导航结果写入无锁队列
-            if ( origin_trajectory->rows() > 0 && predict_trajectories->rows() > 0 )
-                hdl->queue.enqueue( trajectory );
+            // 只推入新增的增量行到队列
+            if ( cur_origin_rows > last_origin_rows )
+            {
+                Eigen::MatrixXd* origin_trajectory = new Eigen::MatrixXd(
+                    full_origin.bottomRows( cur_origin_rows - last_origin_rows ) );
+                Eigen::MatrixXd* predict_trajectories = new Eigen::MatrixXd(
+                    full_matched.bottomRows( cur_matched_rows - last_matched_rows ) );
+
+                std::vector< Eigen::MatrixXd* > trajectory;
+                trajectory.push_back( origin_trajectory );
+                trajectory.push_back( predict_trajectories );
+
+                if ( origin_trajectory->rows() > 0 && predict_trajectories->rows() > 0 )
+                    hdl->queue.enqueue( trajectory );
+
+                last_origin_rows  = cur_origin_rows;
+                last_matched_rows = cur_matched_rows;
+            }
         }
         catch ( const PDRException& e )
         {
@@ -745,18 +760,45 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
         }
         else
         {
+            // 取出所有增量
+            std::vector< Eigen::MatrixXd* > origin_deltas;
+            std::vector< Eigen::MatrixXd* > matched_deltas;
+
             while ( true )
             {
-                std::vector<Eigen::MatrixXd*> trajectory;
-                bool is_ok = hdl->queue.try_dequeue( trajectory );
-                if ( ! is_ok )
+                std::vector< Eigen::MatrixXd* > trajectory;
+                if ( ! hdl->queue.try_dequeue( trajectory ) )
                     break;
+                origin_deltas.push_back( trajectory[ 0 ] );
+                matched_deltas.push_back( trajectory[ 1 ] );
+            }
 
-                origin_trajectory    = trajectory[ 0 ];
-                predict_trajectories = trajectory[ 1 ];
-                ret = eigenToPDRTrajectory( *origin_trajectory, &origin_trajs );
+            // 合并所有增量为单个矩阵
+            if ( ! origin_deltas.empty() )
+            {
+                int total_origin = 0, total_matched = 0;
+                for ( auto* m : origin_deltas )  total_origin += m->rows();
+                for ( auto* m : matched_deltas ) total_matched += m->rows();
+
+                Eigen::MatrixXd* merged_origin  = new Eigen::MatrixXd( total_origin, 4 );
+                Eigen::MatrixXd* merged_matched = new Eigen::MatrixXd( total_matched, 4 );
+
+                int off_o = 0, off_m = 0;
+                for ( size_t i = 0; i < origin_deltas.size(); ++i )
+                {
+                    int rows_o = origin_deltas[ i ]->rows();
+                    int rows_m = matched_deltas[ i ]->rows();
+                    merged_origin->block( off_o, 0, rows_o, 4 )  = *origin_deltas[ i ];
+                    merged_matched->block( off_m, 0, rows_m, 4 ) = *matched_deltas[ i ];
+                    off_o += rows_o;
+                    off_m += rows_m;
+                    delete origin_deltas[ i ];
+                    delete matched_deltas[ i ];
+                }
+
+                ret = eigenToPDRTrajectory( *merged_origin, &origin_trajs );
                 trajectories_vector_guard->push_back( origin_trajs );
-                ret = eigenToPDRTrajectory( *predict_trajectories, &matched_trajs );
+                ret = eigenToPDRTrajectory( *merged_matched, &matched_trajs );
                 trajectories_vector_guard->push_back( matched_trajs );
             }
 

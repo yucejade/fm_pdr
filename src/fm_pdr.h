@@ -167,7 +167,7 @@ int fm_pdr_start_with_file( PDRHandler handler, char* sensor_file_path );
 /// @fn int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 基于传感器数据，执行行人航迹推算预测
 /// @param handler [in] PDR句柄
-/// @param trajectories_array [out] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
+/// @param trajectories_array [out] 预测的行人航迹，内部包含两个轨迹，每个轨迹有多个数据点，第一个是传感器测量轨迹，第二个是匹配路径
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
@@ -175,14 +175,14 @@ int fm_pdr_predict( PDRHandler handler, PDRTrajectoryArray* trajectories_array )
 
 /// @fn void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array )
 /// @brief 释放航迹数据
-/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
+/// @param trajectories_array [in] 预测的行人航迹，内部包含两个轨迹，每个轨迹有多个数据点，第一个是传感器测量轨迹，第二个是匹配路径
 /// @return 无
 void fm_pdr_free_trajectory( PDRTrajectoryArray* trajectories_array );
 
 /// @fn int fm_pdr_stop( PDRHandler handler, PDRTrajectoryArray *trajectories_array )
 /// @brief 停止导航
 /// @param handler [in] PDR句柄
-/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
+/// @param trajectories_array [in] 预测的行人航迹，内部包含两个轨迹，每个轨迹有多个数据点，第一个是传感器测量轨迹，第二个是匹配路径
 /// @return >0: 校正后位置点数量
 ///         =0: trajectories传递NULL值并且推算成功
 ///         <0: 错误码
@@ -208,7 +208,7 @@ int fm_pdr_get_config( PDRHandler handler, PDRConfig* config );
 /// @fn int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray *trajectories_array )
 /// @brief 保存行人航迹数据，函数可以重复调用，每次追加写入数据
 /// @param file_path [in] 保存文件路径
-/// @param trajectories_array [in] 预测的行人航迹，内部分配多个数据块构成的列表，每个数据块有多条数据，每条数据表示每步的位置信息
+/// @param trajectories_array [in] 预测的行人航迹，内部包含两个轨迹，每个轨迹有多个数据点，第一个是传感器测量轨迹，第二个是匹配路径
 /// @return 0: 保存成功；!=0: 保存失败
 int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectories_array );
 
