@@ -838,6 +838,9 @@ int fm_pdr_save_trajectory_data( char* file_path, PDRTrajectoryArray* trajectori
     {
         for ( unsigned int i = 0; i < trajectories_array->count; ++i )
         {
+            if (!trajectories_array->array || !trajectories_array->array[ i ])
+                return PDRException::PARAMETER_ERROR;
+
             PDRTrajectory* trajectories = trajectories_array->array[ i ];
             if ( ! trajectories )
                 return PDRException::NONE;

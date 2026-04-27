@@ -6,6 +6,7 @@ ConditionPathExists=/home/kevin/fm_pdr/build/package/bin/mag_calib4
 [Service]
 Type=simple
 WorkingDirectory=/home/kevin/fm_pdr/build/package/bin
+Environment=LD_LIBRARY_PATH=/home/kevin/fm_pdr/build/package/lib
 User=kevin
 
 # 清理残留文件

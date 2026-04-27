@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['optimized_5fmode_5fratio_165',['optimized_mode_ratio',['../struct__PDRConfig.html#aa89d0b906d97857c1b684b3955e16adc',1,'_PDRConfig']]]
+  ['optimized_5fmode_5fratio_0',['optimized_mode_ratio',['../struct__PDRConfig.html#aa89d0b906d97857c1b684b3955e16adc',1,'_PDRConfig']]]
 ];
