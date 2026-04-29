@@ -55,6 +55,26 @@ public:
         }
     }
 
+    float getFloatOption( const std::string& option, float defaultValue = 0.0f ) const
+    {
+        std::string strValue = getOption( option );
+        if ( strValue.empty() )
+            return defaultValue;
+
+        try
+        {
+            return std::stof( strValue );
+        }
+        catch ( const std::invalid_argument& )
+        {
+            return defaultValue;
+        }
+        catch ( const std::out_of_range& )
+        {
+            return defaultValue;
+        }
+    }
+
     // 检查选项是否存在
     bool hasOption( const std::string& option ) const
     {
@@ -64,14 +84,20 @@ public:
     // 显示帮助信息
     void showHelp() const
     {
-        std::cout << "Usage: pdr [options]\n"
+        std::cout << "Usage: mag_calib4 [options]\n"
                   << "Options:\n"
-                  << "  -t, --type\t\t包含type选项，实时链接磁力计显示校准前后数值，否则输入磁力计数据生成校准文件\n"
-                  << "  -c, --calibration-path <校准文件>\t\t实时链接磁力计时生成的校准文件，默认使用./mag_calib.csv\n"
-                  << "  -i, --interval <时间间隔>\t\t实时连接磁力计时的时间间隔，默认使用180\n"
-                  << "  -d, --mag-data-path <磁力计数据文件>\t\t默认使用./Magnetometer.csv\n"
-                  << "  -o, --output-path <输出校准结果文件>\t\t默认使用./mag_calib.csv\n"
-                  << "  -h, --help\t\t\t\t帮助信息\n";
+                  << "  -t, --type <type>\t\t操作类型\n"
+                  << "    0: 实时采集磁力计数据\n"
+                  << "    1: 从数据文件生成校准参数\n"
+                  << "    2: 实时校准验证\n"
+                  << "    3: 验证校准文件有效性\n"
+                  << "  -d, --mag-data-path <path>\t磁力计数据文件路径\n"
+                  << "  -c, --calibration-path <path>\t校准文件路径\n"
+                  << "  -o, --output-path <path>\t输出校准结果文件路径\n"
+                  << "  -i, --interval <seconds>\t实时操作时间间隔\n"
+                  << "  --max-avg-error <float>\t模长变异系数阈值（-t 3），默认 0.05\n"
+                  << "  --mag-range <min,max>\t\t校正后模长范围µT（-t 3），默认 40,60\n"
+                  << "  -h, --help\t\t\t帮助信息\n";
     }
 private:
     std::vector< std::string > tokens_;
