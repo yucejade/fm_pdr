@@ -2,6 +2,7 @@
 #include "SoftAndHardIronCalibration.h"
 #include "fm_device_wrapper.h"
 #include <algorithm>
+#include <cmath>
 #include <iostream>
 #include <rapidcsv.h>
 #include <string>
@@ -343,6 +344,131 @@ int main( int argc, char* argv[] )
         catch ( ... )
         {
             std::cerr << "磁力计校准失败" << std::endl;
+        }
+    }
+    else if (type == 3)
+    {
+        std::string mag_data_path = parser.getOption("-d");
+        if (mag_data_path.empty())
+        {
+            mag_data_path = parser.getOption("--mag-data-path");
+            if (mag_data_path.empty())
+            {
+                std::cerr << "错误：必须指定原始数据文件路径 (-d)" << std::endl;
+                return 1;
+            }
+        }
+
+        std::string calibration_path = parser.getOption("-c");
+        if (calibration_path.empty())
+        {
+            calibration_path = parser.getOption("--calibration-path");
+            if (calibration_path.empty())
+            {
+                std::cerr << "错误：必须指定校准文件路径 (-c)" << std::endl;
+                return 1;
+            }
+        }
+
+        float max_avg_error = parser.getFloatOption("--max-avg-error", 0.05f);
+
+        // 解析模长范围参数，格式: min,max
+        float mag_min = 40.0f;
+        float mag_max = 60.0f;
+        std::string mag_range_str = parser.getOption("--mag-range");
+        if (!mag_range_str.empty())
+        {
+            size_t comma_pos = mag_range_str.find(',');
+            if (comma_pos != std::string::npos)
+            {
+                try
+                {
+                    mag_min = std::stof(mag_range_str.substr(0, comma_pos));
+                    mag_max = std::stof(mag_range_str.substr(comma_pos + 1));
+                }
+                catch (...)
+                {
+                    std::cerr << "警告：--mag-range 格式错误，使用默认值 40,60" << std::endl;
+                    mag_min = 40.0f;
+                    mag_max = 60.0f;
+                }
+            }
+        }
+
+        // 加载校准参数
+        SixParametersCorrector corrector;
+        if (!corrector.fromFile(calibration_path))
+        {
+            std::cerr << "验证失败：无法加载校准文件 " << calibration_path << std::endl;
+            return 1;
+        }
+
+        // 加载原始数据
+        rapidcsv::Document doc(mag_data_path, rapidcsv::LabelParams(0));
+        std::vector<double> mag_x = doc.GetColumn<double>("X (µT)");
+        std::vector<double> mag_y = doc.GetColumn<double>("Y (µT)");
+        std::vector<double> mag_z = doc.GetColumn<double>("Z (µT)");
+
+        if (mag_x.empty())
+        {
+            std::cerr << "验证失败：原始数据文件为空" << std::endl;
+            return 1;
+        }
+
+        // 第一遍：计算校正后每个点的模长
+        size_t count = mag_x.size();
+        std::vector<double> norms(count);
+        Vector3f bias = corrector.getb().cast<float>();
+
+        for (size_t i = 0; i < count; ++i)
+        {
+            // (raw - b) 的模长 = 去除硬铁偏移后的磁场强度，单位µT
+            Vector3f raw(mag_x[i], mag_y[i], mag_z[i]);
+            norms[i] = (raw - bias).norm();
+        }
+
+        // 计算模长均值和变异系数（标准差/均值）
+        double sum_norms = 0.0;
+        for (size_t i = 0; i < count; ++i)
+            sum_norms += norms[i];
+        double avg_magnitude = sum_norms / count;
+
+        double sum_sq_diff = 0.0;
+        for (size_t i = 0; i < count; ++i)
+        {
+            double diff = norms[i] - avg_magnitude;
+            sum_sq_diff += diff * diff;
+        }
+        double stddev = std::sqrt(sum_sq_diff / count);
+        double cv = (avg_magnitude > 0) ? (stddev / avg_magnitude) : 999.0;
+
+        std::cout << "数据点数: " << count << std::endl;
+        std::cout << "模长变异系数: " << cv << " (阈值: " << max_avg_error << ")" << std::endl;
+        std::cout << "去偏移后平均模长: " << avg_magnitude << " µT (范围: " << mag_min << " - " << mag_max << ")" << std::endl;
+
+        bool passed = true;
+
+        if (cv > max_avg_error)
+        {
+            std::cerr << "验证失败：模长变异系数 " << cv << " 超过阈值 " << max_avg_error << std::endl;
+            passed = false;
+        }
+
+        if (avg_magnitude < mag_min || avg_magnitude > mag_max)
+        {
+            std::cerr << "验证失败：去偏移后平均模长 " << avg_magnitude << " µT 不在范围 [" << mag_min << ", " << mag_max << "] 内" << std::endl;
+            passed = false;
+        }
+
+        if (passed)
+        {
+            std::cout << "验证通过" << std::endl;
+            return 0;
+        }
+        else
+        {
+            std::cout << "验证失败，请重新校准" << std::endl;
+            return 1;
         }
     }
     else
