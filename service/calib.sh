@@ -23,4 +23,10 @@ echo "结束校准!!!"
 
 sudo systemctl stop mag_data.service
 ${PACKAGE_PATH}/bin/mag_calib4 -t 1 -d ${PACKAGE_PATH}/bin/mag_calib_data/Magnetometer.csv -o ${PACKAGE_PATH}/bin/mag_calib_data/mag_calibration.csv
-cp ${PACKAGE_PATH}/bin/mag_calib_data/mag_calibration.csv ${PACKAGE_PATH}/conf/mag_calibration.csv
+
+if ${PACKAGE_PATH}/bin/mag_calib4 -t 3 -d ${PACKAGE_PATH}/bin/mag_calib_data/Magnetometer.csv -c ${PACKAGE_PATH}/bin/mag_calib_data/mag_calibration.csv; then
+    cp ${PACKAGE_PATH}/bin/mag_calib_data/mag_calibration.csv ${PACKAGE_PATH}/conf/mag_calibration.csv
+    echo "校准文件已更新"
+else
+    echo "校准验证失败，未更新校准文件，请重新校准"
+fi
