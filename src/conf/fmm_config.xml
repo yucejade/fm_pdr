@@ -17,8 +17,8 @@
   </input>
   <parameters>
     <k>4</k>
-    <r>0.4</r>
-    <gps_error>0.5</gps_error>
+    <r>0.001</r>
+    <gps_error>0.001</gps_error>
   </parameters>
   <output>
     <file>mr.txt</file>

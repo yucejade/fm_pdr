@@ -186,7 +186,7 @@ Eigen::VectorXd CFmDirectionPredictor::predict_direction( const StartInfo& start
         Vector3d cross_vec = current_e.cross( no_opt_e0 );
         double   dot_cg    = cross_vec.dot( current_g );
 
-        no_opt_signs[ i ] = ( ( dot_cg > 0 ) ? -1.0 : ( dot_cg < 0 ) ? 1.0 : 0.0 );
+        no_opt_signs[ i ] = ( ( dot_cg > 0 ) ? 1.0 : ( dot_cg < 0 ) ? -1.0 : 0.0 );
 
         // cout << "no_opt_angles: " << no_opt_angles[ i ] << ", no_opt_signs: " << no_opt_signs[ i ] << endl;
     }

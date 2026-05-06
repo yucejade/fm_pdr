@@ -50,7 +50,7 @@
             "program": "${workspaceFolder}/build/package/bin/PDRTest",
             "args": [
                 "-d",
-                "output_sensor_data",
+                "test_data/20260506-1113",
                 "-o",
                 "Trajectory.csv",
                 "-e"
